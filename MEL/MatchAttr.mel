@@ -1,0 +1,36 @@
+//
+// look in the current selection's attributes for those that match a regex
+//
+
+//
+// get a list of matching attributes
+//
+proc string[] match_attr_list(string $regex) {
+    string $res[];
+    string $sels[] = `ls -sl`;
+    if (size($sels) < 1) {
+	return $res;
+    }
+    int $n = 0;
+    string $a, $nd, $ats[], $m;
+    for ($nd in $sels) {
+	$ats = `listAttr $nd`;
+	for ($a in $ats) {
+	    $m = `match $regex $a`;
+	    if ($m != "") {
+		$res[$n] = ($nd+"."+$a);
+		$n = $n + 1;
+	    }
+	}
+    }
+    return $res;
+}
+
+//
+// show the list
+//
+global proc MatchAttr(string $regex) {
+    print (match_attr_list($regex));
+}
+
+///////////////////// eof //

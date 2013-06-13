@@ -1,0 +1,83 @@
+//
+// CausticVisualizer_IBL_Setup.mel
+// $Revision: #2 $
+//
+
+/****
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SOFTWARE IS PROVIDED
+*AS IS* AND IMAGINATION TECHNOLOGIES AND ITS SUPPLIERS DISCLAIM ALL WARRANTIES, EITHER
+EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS FOR A PARTICULAR PURPOSE.  IN NO EVENT SHALL IMAGINATION TECHNOLOGIES OR ITS
+SUPPLIERS BE LIABLE FOR ANY SPECIAL, INCIDENTAL, INDIRECT, OR CONSEQUENTIAL DAMAGES
+WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS,
+BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION, OR ANY OTHER PECUNIARY
+LOSS) ARISING OUT OF THE USE OF OR INABILITY TO USE THIS SOFTWARE, EVEN IF
+IMAGINATION TECHNOLOGIES HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+***/
+
+//
+// Quick Setup of Mental Ray Options for the best IBL results in Caustic Visualizer. This
+//   version adapts to different current (and possibly future) versions of Maya that may have
+//   varying #'s of Mental Ray stringOptions values.
+//
+// TO USE:
+//	Just place this in your Mel Path & run CausticVisualizer_IBL_Setup()
+//
+
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+
+//
+// Either find and update an existing stringOption, or select a new one.
+// We assume that "miDefaultOptions" already exists!!
+//
+proc cv_assign_mr_stringopt(string $Name,string $Type,string $Value)
+{
+    int $i;
+    string $prevName, $prevValue, $attr;
+    $i = 0;
+    for ($i=0; $i<200; $i=$i+1) {
+	$attr = ("miDefaultOptions.stringOptions["+$i+"]");
+	$prevName = `getAttr ($attr+".name")`;
+	if ($prevName == "") { // we ran off the end of the existing list
+	    print ("Adding '"+$Name+"'=("+$Value+") as stringOption["+$i+"]\n");
+	    setAttr -type "string" ($attr+".name") $Name;
+	    setAttr -type "string" ($attr+".type") $Type;
+	    setAttr -type "string" ($attr+".value") $Value;
+	    return;
+	} else if ($prevName == $Name) { // these is already a stringopt with the desired name
+	    $prevValue = `getAttr ($attr+".value")`;
+	    if ($prevValue == $Value) {
+		print ("The '"+$Name+"' stringOption is already set to ["+$Value+"] - Great!\n");
+		return; // the existing value is already the desired value
+	    }
+	    setAttr -type "string" ($attr+".value") $Value;
+	    print ("Changing '"+$Name+"' stringOption from ["+$prevValue+"] to ["+$Value+"]\n");
+	    return;
+	}
+    }
+    warn ("Hmm, never got to '"+$Name+"'\n");
+}
+
+/////////////////////////////////////////////////////
+// Global Entry Point ///////////////////////////////
+/////////////////////////////////////////////////////
+
+global proc CausticVisualizer_IBL_Setup()
+{
+    string $prevSel[];
+    $prevSel = `ls -sl`;
+    print ("Optimizing MentalRay IBL Options for Caustic Visualizer Use:\n");
+    select -r miDefaultOptions; // selecting it will ensure it exists
+    cv_assign_mr_stringopt("environment lighting mode","string","light");
+    cv_assign_mr_stringopt("environment lighting quality","float","0.75");
+    cv_assign_mr_stringopt("environment lighting shadow","string","on");
+    cv_assign_mr_stringopt("light relative scale","float","0.31831"); // (1.0/PI)
+    cv_assign_mr_stringopt("light lighting resolution","int","512");
+    select $prevSel;
+}
+
+///////////////////////////////////////////////////
+////////////////////////////////////////// eof ////
+///////////////////////////////////////////////////
