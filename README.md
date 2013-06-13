@@ -12,7 +12,7 @@ they're provided to help users be even more awesome.
 
 You can download & install these tools with or without a (free) GitHub account -- though
 with an account is easier! Just clone the repo or download and unpack the ZIP file to your desired
-location, and then open the Maya file "open\_m\e_\to\_install.ma" -- the scripts in that
+location, and then open the Maya file "open\_me\_to\_install.ma" -- the scripts in that
 file will do the rest (of course, if you like the Old School Ways, just copy the .mel and .py
 files to your existing script locations).
 
