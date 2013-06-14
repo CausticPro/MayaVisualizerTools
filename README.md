@@ -14,9 +14,9 @@ You can download & install these tools with or without a (free) GitHub account -
 with an account is easier!
 
 1. Clone the repo or download and unpack the ZIP file to your desired location
-1. Open the Maya file `open\_me\_to\_install.ma` & then restart Maya -- Maya will do the rest for you
+1. Open the Maya file `open_me_to_install.ma` & then restart Maya -- Maya will do the rest for you
 
-(Of course, if you like the Old School Ways, just copy the .mel and .py files to your existing Maya script locations).
+Of course, if you like the Old School Ways, just copy the .mel and .py files to your existing Maya script locations. If you use the New Way, then anytime you pull updates into the same directory, they'll be available instantly in Maya, no further installation required.
 
 Enjoy, and please feel free to comment, share, and especially contribute here on GitHub.
 
