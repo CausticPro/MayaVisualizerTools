@@ -1,4 +1,5 @@
-""" Visualizer Quick Setup - Python version
+"""
+Visualizer Quick Setup - Python version
 
 # TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SOFTWARE IS PROVIDED
 # *AS IS* AND IMAGINATION TECHNOLOGIES AND ITS SUPPLIERS DISCLAIM ALL WARRANTIES, EITHER
@@ -22,7 +23,7 @@ class Service(object):
   "should be a singleton"
   def __init__(self):
     Service.use = self
-    self.concWindow = None
+    self.concWindow = 'Concierge'
     self.names = []    # ORDERED
     self.val = {}       
     self.prev = {}       
@@ -183,7 +184,7 @@ class Service(object):
     if not os.path.exists(logoFile):
       print 'cannot find "%s"'%(logoFile)
       return None
-    print 'Found logo "%s"'%(logoFile)
+    # print 'Found logo "%s"'%(logoFile)
     logoFile = re.sub(r'\\','/',logoFile) # Qt likes forwward slash
     return logoFile
 
@@ -213,6 +214,48 @@ class Service(object):
     return None
 
   def showUI(self):
+    dl = []
+    titleText = 'Scene Ready to Render!'
+    needDIY = True
+    if self.already_okay():
+      titleText = "No Changes"
+      needDIY = False
+      dl.append("No changes needed!")
+      dl.append("This scene is already fine, enjoy.")
+    else:
+      for d in self.desc:
+        ds = d
+        if ds.__contains__('%d'):
+          ds = ds % (self.desc[d])
+        dl.append(ds)
+    # start actual UI bits
+    if maya.cmds.window(self.concWindow,exists=True):
+      maya.cmds.deleteUI(self.concWindow,window=True)
+    self.concWindow = maya.cmds.window('Concierge',menuBar=False,sizeable=False,title='Caustic Concierge')
+    vert = maya.cmds.columnLayout(p=self.concWindow,rs=6,cal='center',adj=True)
+    tops = maya.cmds.rowLayout(p=vert,nc=2,bgc=[0,0,0],co2=[5,20])
+    visBtn = maya.cmds.iconTextButton('Visualizer',image=self.findCausticLogo(),p=tops,command=Service.use.webHandler)
+    title = maya.cmds.text('title',p=tops,label=titleText,font='boldLabelFont',width=30+len(titleText*10))
+    maya.cmds.setParent('..')
+    midsection = maya.cmds.columnLayout(p=vert,co=['left',10],rs=3)
+    for d in dl:
+      maya.cmds.text(p=midsection,label=d)
+    maya.cmds.setParent('..')
+    bots = maya.cmds.rowLayout(p=vert,nc=2+needDIY)
+    wd = 120
+    if not needDIY:
+      wd = 120 * 3 / 2
+    helpBtn = maya.cmds.iconTextButton(p=bots,label='Help',st='textOnly',width=wd,flat=True,bgc=[.4,.4,.4],mw=10,command=Service.use.helpHandler)
+    okayBtn = maya.cmds.iconTextButton(p=bots,label='Great',st='textOnly',width=wd,flat=True,bgc=[.45,.2,.2],mw=10,command=Service.use.okHandler)
+    if needDIY:
+      diyBtn = maya.cmds.iconTextButton(p=bots,label='I\'ll Do It Myself',st='textOnly',width=wd,flat=True,bgc=[.4,.4,.4],mw=10,command=Service.use.diyHandler)
+      maya.cmds.rowLayout(bots,edit=True,co2=[20,20])
+    else:
+      maya.cmds.rowLayout(bots,edit=True,co3=[20,40,20])
+    maya.cmds.showWindow(self.concWindow)
+
+
+  def showUI2(self):
     uiS = self.getUiString()
     if not uiS:
       print "Unable to find UI file!"
@@ -321,12 +364,16 @@ def update_string_options():
   changes = False
   prevSel = maya.cmds.ls(selection=True)
   print ("Optimizing MentalRay IBL Options for Caustic Visualizer Use:\n")
-  maya.cmds.select("miDefaultOptions",replace=True) # selecting it will ensure it exists
-  changes |= cv_assign_mr_stringopt("environment lighting mode","string","light")
-  changes |= cv_assign_mr_stringopt("environment lighting quality","float","0.75")
-  changes |= cv_assign_mr_stringopt("environment lighting shadow","string","on")
-  changes |= cv_assign_mr_stringopt("light relative scale","float","0.31831") # (1.0/PI)
-  changes |= cv_assign_mr_stringopt("light lighting resolution","int","512")
+  try:
+    maya.cmds.select("miDefaultOptions",replace=True) # selecting it will ensure it exists
+    changes |= cv_assign_mr_stringopt("environment lighting mode","string","light")
+    changes |= cv_assign_mr_stringopt("environment lighting quality","float","0.75")
+    changes |= cv_assign_mr_stringopt("environment lighting shadow","string","on")
+    changes |= cv_assign_mr_stringopt("light relative scale","float","0.31831") # (1.0/PI)
+    changes |= cv_assign_mr_stringopt("light lighting resolution","int","512")
+  except:
+    print "Caution, mental ray is not loaded"
+    return False
   if len(prevSel) > 0:
     maya.cmds.select(prevSel)
   return changes
