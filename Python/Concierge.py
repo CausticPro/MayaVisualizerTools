@@ -23,13 +23,15 @@ class Service(object):
   "should be a singleton"
   def __init__(self):
     Service.use = self
-    self.concWindow = 'Concierge'
+    self.concWindow = None  
+    self.helpWindow = None
     self.names = []    # ORDERED
     self.val = {}       
     self.prev = {}       
     self.desc = {}       
     self.hasChanges = False
     self.iblUpdate = False
+    self.logoFile = self.findCausticLogo()
 
   def already_okay(self):
     "is the scene already okay?"
@@ -200,8 +202,7 @@ class Service(object):
           f = open(uPath)
           uiData = f.readlines()
           f.close()
-          logoFile = self.findCausticLogo()
-          logoInsert = r'<normaloff>%s</normaloff>%s</iconset>'%(logoFile,logoFile)
+          logoInsert = r'<normaloff>%s</normaloff>%s</iconset>'%(self.logoFile,self.logoFile)
           pat = re.compile(r'<normaloff>.*png</iconset>')
           Lx = []
           for L in uiData:
@@ -229,12 +230,13 @@ class Service(object):
           ds = ds % (self.desc[d])
         dl.append(ds)
     # start actual UI bits
-    if maya.cmds.window(self.concWindow,exists=True):
-      maya.cmds.deleteUI(self.concWindow,window=True)
+    if self.concWindow:
+      if maya.cmds.window(self.concWindow,exists=True):
+        maya.cmds.deleteUI(self.concWindow,window=True)
     self.concWindow = maya.cmds.window('Concierge',menuBar=False,sizeable=False,title='Caustic Concierge')
     vert = maya.cmds.columnLayout(p=self.concWindow,rs=6,cal='center',adj=True)
     tops = maya.cmds.rowLayout(p=vert,nc=2,bgc=[0,0,0],co2=[5,20])
-    visBtn = maya.cmds.iconTextButton('Visualizer',image=self.findCausticLogo(),p=tops,command=Service.use.webHandler)
+    visBtn = maya.cmds.iconTextButton('Visualizer',image=self.logoFile,p=tops,command=Service.use.webHandler)
     title = maya.cmds.text('title',p=tops,label=titleText,font='boldLabelFont',width=30+len(titleText*10))
     maya.cmds.setParent('..')
     midsection = maya.cmds.columnLayout(p=vert,co=['left',10],rs=3)
@@ -246,7 +248,7 @@ class Service(object):
     if not needDIY:
       wd = 120 * 3 / 2
     helpBtn = maya.cmds.iconTextButton(p=bots,label='Help',st='textOnly',width=wd,flat=True,bgc=[.4,.4,.4],mw=10,command=Service.use.helpHandler)
-    okayBtn = maya.cmds.iconTextButton(p=bots,label='Great',st='textOnly',width=wd,flat=True,bgc=[.45,.2,.2],mw=10,command=Service.use.okHandler)
+    okayBtn = maya.cmds.iconTextButton(p=bots,label='Great, Thanks',st='textOnly',width=wd,flat=True,bgc=[.45,.2,.2],font='boldLabelFont',mw=10,command=Service.use.okHandler)
     if needDIY:
       diyBtn = maya.cmds.iconTextButton(p=bots,label='I\'ll Do It Myself',st='textOnly',width=wd,flat=True,bgc=[.4,.4,.4],mw=10,command=Service.use.diyHandler)
       maya.cmds.rowLayout(bots,edit=True,co2=[20,20])
@@ -293,7 +295,8 @@ class Service(object):
 
   # button handlers
   def okHandler(self, *args):
-    print "Happy to be of service!"
+    if not self.already_okay():
+      print "Happy to be of service!"
     maya.cmds.deleteUI(self.concWindow)
     self.concWindow = None
   def diyHandler(self, *args):
@@ -306,13 +309,36 @@ class Service(object):
     maya.cmds.deleteUI(self.concWindow)
     self.concWindow = None
   def helpHandler(self, *args):
-    helpText = """The concierge will do its best to prep your scene for use with the
-    Caustic Visualizer. It checks and properly sets-up common isues such as shadowing,
-    ray-trace enabling, etc. It lists everything it has done (if anything) in the Concierge
-    window. If you choose not to approve these actions, Concierge will reverty all Maya settings,
-    but will also write to the console a listing of what it would have altered -- you can
-    copy and paste these commands selectively yourself."""
+    helpText = """The concierge will do its best to prep your scene
+for use with the Caustic Visualizer. It checks and properly
+sets-up common issues such as shadowing, ray-trace enabling, etc.
+Everything the Concierge has done (if anything!) is listed
+right in the Concierge window.
+
+If you choose not to approve these actions, Concierge will revert
+all Maya settings, and will also write to the Maya Script Editor
+window a complete listing of what it *would* have altered --
+you can copy and paste these commands selectively yourself."""
     print helpText
+    titleText = 'Caustic Concierge Help'
+    if self.helpWindow:
+      if maya.cmds.window(self.helpWindow,exists=True):
+        maya.cmds.deleteUI(self.helpWindow,window=True)
+    self.helpWindow = maya.cmds.window(menuBar=False,sizeable=False,title='Concierge Help')
+    vert = maya.cmds.columnLayout(p=self.helpWindow,rs=16,cal='center',adj=True)
+    tops = maya.cmds.rowLayout(p=vert,nc=2,bgc=[0,0,0],co2=[5,20])
+    visBtn = maya.cmds.iconTextButton('Visualizer',image=self.logoFile,p=tops,command=Service.use.webHandler)
+    title = maya.cmds.text('title',p=tops,label=titleText,font='boldLabelFont',width=30+len(titleText*10))
+    maya.cmds.setParent('..')
+    maya.cmds.text(p=vert,label=helpText,wordWrap=True)
+    okayBtn = maya.cmds.iconTextButton(p=vert,label='Got It',st='textOnly',width=260,flat=True,bgc=[.45,.2,.2],mw=10,font='boldLabelFont',command=Service.use.helpOkHandler)
+    maya.cmds.showWindow(self.helpWindow)
+
+  def helpOkHandler(self, *args):
+    print "Happy to be of service!"
+    maya.cmds.deleteUI(self.helpWindow)
+    self.helpWindow = None
+
   def webHandler(self, *args):
     maya.cmds.launch(web="https://www.caustic.com/visualizer/maya/")
 
@@ -351,19 +377,19 @@ def cv_assign_mr_stringopt(Name,Type,Value):
       elif prevName == Name:         # there is already a stringopt with the desired name
         prevValue = maya.cmds.getAttr(attr+".value")
         if prevValue == Value:
-          print "The '%s' stringOption is already set to [%s] - Great!" % (Name,Value)
+          # print "The '%s' stringOption is already set to [%s] - Great!" % (Name,Value)
           return False # the existing value is already the desired value
         maya.cmds.setAttr(attr+".value",Value,type="string")
         print "Changing '%s' stringOption from [%s] to [%s]" % (Name,prevValue,Value) 
         return True
-  maya.cmds.warning("Hmm, never got to '%s'\n" % (Name))
+  # maya.cmds.warning("Hmm, never got to '%s'\n" % (Name))
   return False
 
 def update_string_options():
   "mental ray string options -- return True if anything changed"
   changes = False
   prevSel = maya.cmds.ls(selection=True)
-  print ("Optimizing MentalRay IBL Options for Caustic Visualizer Use:\n")
+  # print ("Optimizing MentalRay IBL Options for Caustic Visualizer Use:\n")
   try:
     maya.cmds.select("miDefaultOptions",replace=True) # selecting it will ensure it exists
     changes |= cv_assign_mr_stringopt("environment lighting mode","string","light")
