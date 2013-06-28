@@ -2,10 +2,20 @@
 Contains the same script (except for the invovcation) as found as a script node
    in the "open_me_to_install.ma" scene.
    
-   TO-DO: check existing paths -- don't do anything if they're already set!
-   Look for updates on git
-   Can there be both userSetup.mel and userSetup.py?
-   What about maya/scripts instead of maya/version/scripts?
+   TO-DO:
+     Look for updates on git
+     Split userSetup.mel and userSetup.py?
+     What about maya/scripts instead of maya/version/scripts?
+
+# TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SOFTWARE IS PROVIDED
+# *AS IS* AND IMAGINATION TECHNOLOGIES AND ITS SUPPLIERS DISCLAIM ALL WARRANTIES, EITHER
+# EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY
+# AND FITNESS FOR A PARTICULAR PURPOSE.  IN NO EVENT SHALL IMAGINATION TECHNOLOGIES OR ITS
+# SUPPLIERS BE LIABLE FOR ANY SPECIAL, INCIDENTAL, INDIRECT, OR CONSEQUENTIAL DAMAGES
+# WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS,
+# BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION, OR ANY OTHER PECUNIARY
+# LOSS) ARISING OUT OF THE USE OF OR INABILITY TO USE THIS SOFTWARE, EVEN IF
+# IMAGINATION TECHNOLOGIES HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 """
 
 import os, sys, re, maya
