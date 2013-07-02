@@ -209,13 +209,19 @@ class Service(CVToolUtil):
     wd = 120
     if not needDIY:
       wd = 120 * 3 / 2
-    helpBtn = maya.cmds.iconTextButton(p=bots,label='Help',st='textOnly',width=wd,flat=True,bgc=[.4,.4,.3],mw=10,command=Service.use.helpHandler)
-    okayBtn = maya.cmds.iconTextButton(p=bots,label='Great, Thanks',st='textOnly',width=wd,flat=True,bgc=[.3,.4,.3],font='boldLabelFont',mw=10,command=Service.use.okHandler)
-    if needDIY:
-      diyBtn = maya.cmds.iconTextButton(p=bots,label='No, I\'ll Do It Myself',st='textOnly',width=wd,flat=True,bgc=[.4,.3,.3],mw=10,command=Service.use.diyHandler)
-      maya.cmds.rowLayout(bots,edit=True,co2=[20,20])
+    if self.appVersion > 2013:
+      helpBtn = maya.cmds.iconTextButton(p=bots,label='Help',st='textOnly',width=wd,flat=True,bgc=[.4,.4,.3],mw=10,command=Service.use.helpHandler)
+      okayBtn = maya.cmds.iconTextButton(p=bots,label='Great, Thanks',st='textOnly',width=wd,flat=True,bgc=[.3,.4,.3],font='boldLabelFont',mw=10,command=Service.use.okHandler)
+      if needDIY:
+        diyBtn = maya.cmds.iconTextButton(p=bots,label='No, I\'ll Do It Myself',st='textOnly',width=wd,flat=True,bgc=[.4,.3,.3],mw=10,command=Service.use.diyHandler)
     else:
-      maya.cmds.rowLayout(bots,edit=True,co3=[20,40,20])
+      helpBtn = maya.cmds.iconTextButton(p=bots,label='Help',st='textOnly',width=wd,bgc=[.4,.4,.3],mw=10,command=Service.use.helpHandler)
+      okayBtn = maya.cmds.iconTextButton(p=bots,label='Great, Thanks',st='textOnly',width=wd,bgc=[.3,.4,.3],font='boldLabelFont',mw=10,command=Service.use.okHandler)
+      if needDIY:
+        diyBtn = maya.cmds.iconTextButton(p=bots,label='No, I\'ll Do It Myself',st='textOnly',width=wd,bgc=[.4,.3,.3],mw=10,command=Service.use.diyHandler)
+        maya.cmds.rowLayout(bots,edit=True,co2=[20,20])
+      else:
+        maya.cmds.rowLayout(bots,edit=True,co3=[20,40,20])
     maya.cmds.showWindow(self.window)
 
   # button handlers

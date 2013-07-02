@@ -30,6 +30,7 @@ class CVToolUtil(object):
 		self.helpWindow = None
 		self.vertLyt = None
 		self.statusText = None
+                self.appVersion = maya.mel.eval('getApplicationVersionAsFloat();')
 		CVToolUtil.use = self
 		self.helpURL = HelpURL
 		if not CVToolUtil.logoFile:
@@ -62,7 +63,10 @@ class CVToolUtil(object):
 		title = maya.cmds.text('title',p=tops,label=DispTitle,font='boldLabelFont',width=30+10*len(DispTitle))
 		maya.cmds.setParent('..')
 		maya.cmds.text(p=vert,label=Message,wordWrap=True)
-		okayBtn = maya.cmds.iconTextButton(p=vert,label='Got It',st='textOnly',width=260,flat=True,bgc=[.45,.2,.2],mw=10,font='boldLabelFont',command=CVToolUtil.use.helpOkHandler)
+                if self.appVersion > 2013:
+                  okayBtn = maya.cmds.iconTextButton(p=vert,label='Got It',st='textOnly',width=260,flat=True,bgc=[.45,.2,.2],mw=10,font='boldLabelFont',command=CVToolUtil.use.helpOkHandler)
+                else:
+                  okayBtn = maya.cmds.iconTextButton(p=vert,label='Got It',st='textOnly',width=260,bgc=[.45,.2,.2],mw=10,font='boldLabelFont',command=CVToolUtil.use.helpOkHandler)
 		maya.cmds.showWindow(self.helpWindow)
 
 	# button handlers
@@ -124,9 +128,14 @@ class CVToolUtil(object):
 		if not par:
 			par = self.vertLyt
 		botCol = maya.cmds.rowLayout(nc=3,parent=par,ct2=['left','right'],co2=[4,4],adjustableColumn=2)
-		maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',flat=True,bgc=[.4,.4,.3],width=120,command=CVToolUtil.use.helpHandler,annotation='Get help from the Caustic website')
-		maya.cmds.text(label=' ') # dummy
-		maya.cmds.iconTextButton(p=botCol,label='Close',st='textOnly',flat=True,bgc=[.4,.3,.3],width=120,command=CVToolUtil.use.closeHandler,annotation='Close this window')
+                if self.appVersion > 2013:
+                  maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',flat=True,bgc=[.4,.4,.3],width=120,command=CVToolUtil.use.helpHandler,annotation='Get help from the Caustic website')
+                  maya.cmds.text(label=' ') # dummy
+                  maya.cmds.iconTextButton(p=botCol,label='Close',st='textOnly',flat=True,bgc=[.4,.3,.3],width=120,command=CVToolUtil.use.closeHandler,annotation='Close this window')
+                else:
+                  maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',bgc=[.4,.4,.3],width=120,command=CVToolUtil.use.helpHandler,annotation='Get help from the Caustic website')
+                  maya.cmds.text(label=' ') # dummy
+                  maya.cmds.iconTextButton(p=botCol,label='Close',st='textOnly',bgc=[.4,.3,.3],width=120,command=CVToolUtil.use.closeHandler,annotation='Close this window')
 
 	def startUI(self,DispTitle="Generic Window",WinTitle="CV Win",WinName="CVW"):
 		if self.window:

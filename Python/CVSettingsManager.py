@@ -265,9 +265,14 @@ class CVSettingsManager(CVToolUtil):
 		self.visHeader(DispTitle="Name New Preset",Parent=vert)
 		self.newNameField = maya.cmds.textField(p=vert)
 		botCol = maya.cmds.rowLayout(nc=3,parent=vert,ct2=['left','right'],co2=[4,4],adjustableColumn=2)
-		maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',flat=True,bgc=[.4,.4,.3],width=100,command=CVSettingsManager.use.helpHandler,annotation='Get help from the Caustic website')
-		maya.cmds.iconTextButton(p=botCol,label='Okay',st='textOnly',flat=True,bgc=[.3,.4,.3],width=100,command=CVSettingsManager.use.nameOkayHandler,annotation='Close this window')
-		maya.cmds.iconTextButton(p=botCol,label='Cancel',st='textOnly',flat=True,bgc=[.4,.3,.3],width=100,command=CVSettingsManager.use.nameCancelHandler,annotation='Close this window')
+                if self.appVersion > 2013:
+                  maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',flat=True,bgc=[.4,.4,.3],width=100,command=CVSettingsManager.use.helpHandler,annotation='Get help from the Caustic website')
+                  maya.cmds.iconTextButton(p=botCol,label='Okay',st='textOnly',flat=True,bgc=[.3,.4,.3],width=100,command=CVSettingsManager.use.nameOkayHandler,annotation='Close this window')
+                  maya.cmds.iconTextButton(p=botCol,label='Cancel',st='textOnly',flat=True,bgc=[.4,.3,.3],width=100,command=CVSettingsManager.use.nameCancelHandler,annotation='Close this window')
+                else:
+                  maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',bgc=[.4,.4,.3],width=100,command=CVSettingsManager.use.helpHandler,annotation='Get help from the Caustic website')
+                  maya.cmds.iconTextButton(p=botCol,label='Okay',st='textOnly',bgc=[.3,.4,.3],width=100,command=CVSettingsManager.use.nameOkayHandler,annotation='Close this window')
+                  maya.cmds.iconTextButton(p=botCol,label='Cancel',st='textOnly',bgc=[.4,.3,.3],width=100,command=CVSettingsManager.use.nameCancelHandler,annotation='Close this window')
 		maya.cmds.showWindow(self.nameWindow)
 
 	# button handlers for main window #################
@@ -387,25 +392,40 @@ viewport rendering presets."""
 		maya.cmds.text(parent=prCol,label=' ') # dummy
 		pbV = maya.cmds.columnLayout(parent=prCol,rs=8,co=["both",2],adjustableColumn=True)
 		longWid = 10+8*len('Preferred Default')
-		maya.cmds.iconTextButton(p=pbV,label='New Preset',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.newHandler,annotation='New preset from current viewport settings')
-		maya.cmds.iconTextButton(p=pbV,label='Replace Preset',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.replaceHandler,annotation='Replace the selected preset with the current viewport settings')
-		maya.cmds.iconTextButton(p=pbV,label='Delete Preset',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.deleteHandler,annotation='Delete the selected preset')
+                if self.appVersion > 2013:
+                  maya.cmds.iconTextButton(p=pbV,label='New Preset',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.newHandler,annotation='New preset from current viewport settings')
+                  maya.cmds.iconTextButton(p=pbV,label='Replace Preset',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.replaceHandler,annotation='Replace the selected preset with the current viewport settings')
+                  maya.cmds.iconTextButton(p=pbV,label='Delete Preset',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.deleteHandler,annotation='Delete the selected preset')
+                else:
+                  maya.cmds.iconTextButton(p=pbV,label='New Preset',st='textOnly',bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.newHandler,annotation='New preset from current viewport settings')
+                  maya.cmds.iconTextButton(p=pbV,label='Replace Preset',st='textOnly',bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.replaceHandler,annotation='Replace the selected preset with the current viewport settings')
+                  maya.cmds.iconTextButton(p=pbV,label='Delete Preset',st='textOnly',bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.deleteHandler,annotation='Delete the selected preset')
 		#maya.cmds.separator(style='singleDash')
-		#maya.cmds.iconTextButton(p=pbV,label='Preferred Default',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.preferHandler,annotation='Set the selected preset as the default preference',enable=False)
+		#maya.cmds.iconTextButton(p=pbV,label='Preferred Default',st='textOnly',bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.preferHandler,annotation='Set the selected preset as the default preference',enable=False)
 		#
 		longWid = 10+6*len('Show Viewport Settings')
 		cpFrame = maya.cmds.frameLayout('cp',label='WYSIWYG: Batch Render Settings',parent=self.vertLyt)
 		cpCol = maya.cmds.rowLayout(nc=3,parent=cpFrame,adjustableColumn=2)
 		#longWid = 20+10*len('Batch->View')
-		maya.cmds.iconTextButton(p=cpCol,label='Copy View -> Batch',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.v2bHandler,annotation='Copy the current Viewport settings for use in Batch Rendering')
-		maya.cmds.text(label=' ') # dummy
-		maya.cmds.iconTextButton(p=cpCol,label='Copy Batch -> View',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.b2vHandler,annotation='Copy the current batch rendering settings into the viewport settings')
+                if self.appVersion > 2013:
+                  maya.cmds.iconTextButton(p=cpCol,label='Copy View -> Batch',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.v2bHandler,annotation='Copy the current Viewport settings for use in Batch Rendering')
+                  maya.cmds.text(label=' ') # dummy
+                  maya.cmds.iconTextButton(p=cpCol,label='Copy Batch -> View',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.b2vHandler,annotation='Copy the current batch rendering settings into the viewport settings')
+                else:
+                  maya.cmds.iconTextButton(p=cpCol,label='Copy View -> Batch',st='textOnly',bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.v2bHandler,annotation='Copy the current Viewport settings for use in Batch Rendering')
+                  maya.cmds.text(label=' ') # dummy
+                  maya.cmds.iconTextButton(p=cpCol,label='Copy Batch -> View',st='textOnly',bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.b2vHandler,annotation='Copy the current batch rendering settings into the viewport settings')
 		#
 		shoFrame = maya.cmds.frameLayout('sh',label='Show Settings Dialog Windows',parent=self.vertLyt)
 		shoCol = maya.cmds.rowLayout(nc=3,parent=shoFrame,adjustableColumn=2)
-		maya.cmds.iconTextButton(p=shoCol,label='Show Viewport Settings',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.visWinHandler,annotation='Reveal Caustic Visualizer Viewport Settings')
-		maya.cmds.text(label=' ') # dummy
-		maya.cmds.iconTextButton(p=shoCol,label='Show Batch Settings',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.batWinHandler,annotation='Reveal Maya Render Settings Window')
+                if self.appVersion > 2013:
+                  maya.cmds.iconTextButton(p=shoCol,label='Show Viewport Settings',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.visWinHandler,annotation='Reveal Caustic Visualizer Viewport Settings')
+                  maya.cmds.text(label=' ') # dummy
+                  maya.cmds.iconTextButton(p=shoCol,label='Show Batch Settings',st='textOnly',flat=True,bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.batWinHandler,annotation='Reveal Maya Render Settings Window')
+                else:
+                  maya.cmds.iconTextButton(p=shoCol,label='Show Viewport Settings',st='textOnly',bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.visWinHandler,annotation='Reveal Caustic Visualizer Viewport Settings')
+                  maya.cmds.text(label=' ') # dummy
+                  maya.cmds.iconTextButton(p=shoCol,label='Show Batch Settings',st='textOnly',bgc=[.4,.4,.4],width=longWid,command=CVSettingsManager.use.batWinHandler,annotation='Reveal Maya Render Settings Window')
 		#
 		self.statusLine(Label='Welcome to the Caustic Visualizer for Maya\nRender Settings Manager')
 		self.helpCloseFooter()

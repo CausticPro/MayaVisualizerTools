@@ -61,6 +61,7 @@ def MayaVisToolSetup():
     fp = open(userPythonFile,'r')
     previous = fp.read()
     fp.close()
+    userSetupFile = userPythonFile
   else:
     homeDir = os.environ.get('HOME','.')
     mayaDefaultScriptDir = os.path.join(homeDir,'maya',mayaVers,'scripts')
@@ -94,7 +95,7 @@ def MayaVisToolSetup():
     if userPythonFile and not hasVisTools:
       fp.write(hdr+what+' '+'='*20+'\n')
       fp.write("import sys, maya\n")
-      fp.write('sys.path.append(r"%s")'%(visPyPath))
+      fp.write('sys.path.append(r"%s")\n'%(visPyPath))
       fp.write('maya.mel(\'putenv "{0}" ( `getenv "{0}"` + \";{1}\");\')\n'.format('MAYA_SCRIPT_PATH',visMelPath))
       fp.write(hdr+what+' '+'='*20+'\n')
     fp.write(line+'\n')
