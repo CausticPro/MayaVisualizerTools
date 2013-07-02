@@ -7,6 +7,19 @@ Caustic Visualizer is a interactive raytraced 3D rendering tool from Imagination
 
 The scripts here are public, open, and NOT part of the standard Visualizer release -- they're provided to help users be even more awesome.
 
+Current Contents
+----------------
+
+*	**Caustic Concierge** is a one-button scene-prep tool -- load or create any scene, and have the Concierge prep all the settings to ensure good out-of-the-box results with Caustic Visualizer: IBL
+			settings, linear color workflow, proper shadow setups, etc. (Python)
+
+*	**CVSettingsManager** provides Maya _presets_ for the Caustic Visualizer viewport -- you can quickly jump between different setups depending on whether you want fast flipbooks, WYSIWYG matching to the 		Batch Renderer, etc. It also provides easy shortcuts for copyng values bwteen the two render contexts and shortcuts to the settings windows. (Python)
+
+*	**CausticVisualizer_IBL_Setup** makes sure that your mental ray stringOptions are up to date. _This functionality is also included in the Caustic Concierge._ The script here is exactly the
+		one mentioned in recent Caustic forums posts and in this tutorial video: https://vimeo.com/68349810 (Mel)
+
+*	**MatchAttr** is a tiny Mel-script-editor utility that's useful when hunting-down specific attributes on a Maya node -- it matches their names against a regex (Mel)
+
 Installation
 ------------
 
@@ -20,4 +33,4 @@ Of course, if you like the Old School Ways, just copy the .mel and .py files to 
 
 Enjoy, and please feel free to comment, share, and especially contribute here on GitHub.
 
-kb, 14 June 2013
+kb, 2 July 2013

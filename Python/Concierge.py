@@ -1,5 +1,12 @@
 """
-Visualizer Quick Setup - Python version
+Visualizer Quick Setup - handles all the trivial housekeeping for you when
+  importing or creating a new Maya scene. Just load your scene and ask the
+  Caustic Concierge to Prep() it!
+
+Try this in a shelf button:
+
+import Concierge
+Concierge.Prep()
 
 # TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SOFTWARE IS PROVIDED
 # *AS IS* AND IMAGINATION TECHNOLOGIES AND ITS SUPPLIERS DISCLAIM ALL WARRANTIES, EITHER
@@ -17,21 +24,20 @@ import sys
 import os
 import maya
 import re
+from  CVToolUtil import *
 
-class Service(object):
+class Service(CVToolUtil):
   use = None    # we use this to let Qt know where to look for stuff
   "should be a singleton"
   def __init__(self):
+    super(Service,self).__init__()
     Service.use = self
-    self.concWindow = None  
-    self.helpWindow = None
     self.names = []    # ORDERED
     self.val = {}       
     self.prev = {}       
     self.desc = {}       
     self.hasChanges = False
     self.iblUpdate = False
-    self.logoFile = self.findCausticLogo()
 
   def already_okay(self):
     "is the scene already okay?"
@@ -178,42 +184,6 @@ class Service(object):
     # how to handle Enable Diffuse and Enable Caustic?
     # camera settings - depth of field enabled?
 
-  def findCausticLogo(self,Logo='CausticVisualizerLogo.png'):
-    ml = maya.cmds.pluginInfo('CausticVisualizer.mll',query=True,path=True)
-    ml = os.path.normpath(ml)
-    ml = os.path.split(os.path.split(ml)[0])[0]
-    logoFile = os.path.join(ml,'icons',Logo)
-    if not os.path.exists(logoFile):
-      print 'cannot find "%s"'%(logoFile)
-      return None
-    # print 'Found logo "%s"'%(logoFile)
-    logoFile = re.sub(r'\\','/',logoFile) # Qt likes forwward slash
-    return logoFile
-
-  def getUiString(self,UiFileName="Concierge.ui"):
-    """
-    Find the indicated UI file among sys.path directories, and read it as a string.
-    Return None if not found
-    """
-    for d in sys.path:
-      uPath = os.path.join(d,UiFileName)
-      if os.path.exists(uPath):
-          # print 'Reading "%s"'%(uPath)
-          f = open(uPath)
-          uiData = f.readlines()
-          f.close()
-          logoInsert = r'<normaloff>%s</normaloff>%s</iconset>'%(self.logoFile,self.logoFile)
-          pat = re.compile(r'<normaloff>.*png</iconset>')
-          Lx = []
-          for L in uiData:
-            m = pat.search(L)
-            if m:
-              L = pat.sub(logoInsert,L)
-              print L
-            Lx.append(L.__str__())
-          return '\n'.join(Lx)
-    return None
-
   def showUI(self):
     dl = []
     titleText = 'Scene Ready to Render!'
@@ -230,75 +200,30 @@ class Service(object):
           ds = ds % (self.desc[d])
         dl.append(ds)
     # start actual UI bits
-    if self.concWindow:
-      if maya.cmds.window(self.concWindow,exists=True):
-        maya.cmds.deleteUI(self.concWindow,window=True)
-    self.concWindow = maya.cmds.window('Concierge',menuBar=False,sizeable=False,title='Caustic Concierge')
-    vert = maya.cmds.columnLayout(p=self.concWindow,rs=6,cal='center',adj=True)
-    tops = maya.cmds.rowLayout(p=vert,nc=2,bgc=[0,0,0],co2=[5,20])
-    visBtn = maya.cmds.iconTextButton('Visualizer',image=self.logoFile,p=tops,command=Service.use.webHandler)
-    title = maya.cmds.text('title',p=tops,label=titleText,font='boldLabelFont',width=30+len(titleText*10))
-    maya.cmds.setParent('..')
-    midsection = maya.cmds.columnLayout(p=vert,co=['left',10],rs=3)
+    self.startUI(DispTitle=titleText,WinTitle="Caustic Concierge",WinName="Concierge")
+    midsection = maya.cmds.columnLayout(p=self.vertLyt,co=['left',10],rs=3)
     for d in dl:
       maya.cmds.text(p=midsection,label=d)
-    maya.cmds.setParent('..')
-    bots = maya.cmds.rowLayout(p=vert,nc=2+needDIY)
+    #
+    bots = maya.cmds.rowLayout(p=self.vertLyt,nc=2+needDIY)
     wd = 120
     if not needDIY:
       wd = 120 * 3 / 2
-    helpBtn = maya.cmds.iconTextButton(p=bots,label='Help',st='textOnly',width=wd,flat=True,bgc=[.4,.4,.4],mw=10,command=Service.use.helpHandler)
-    okayBtn = maya.cmds.iconTextButton(p=bots,label='Great, Thanks',st='textOnly',width=wd,flat=True,bgc=[.45,.2,.2],font='boldLabelFont',mw=10,command=Service.use.okHandler)
+    helpBtn = maya.cmds.iconTextButton(p=bots,label='Help',st='textOnly',width=wd,flat=True,bgc=[.4,.4,.3],mw=10,command=Service.use.helpHandler)
+    okayBtn = maya.cmds.iconTextButton(p=bots,label='Great, Thanks',st='textOnly',width=wd,flat=True,bgc=[.3,.4,.3],font='boldLabelFont',mw=10,command=Service.use.okHandler)
     if needDIY:
-      diyBtn = maya.cmds.iconTextButton(p=bots,label='I\'ll Do It Myself',st='textOnly',width=wd,flat=True,bgc=[.4,.4,.4],mw=10,command=Service.use.diyHandler)
+      diyBtn = maya.cmds.iconTextButton(p=bots,label='No, I\'ll Do It Myself',st='textOnly',width=wd,flat=True,bgc=[.4,.3,.3],mw=10,command=Service.use.diyHandler)
       maya.cmds.rowLayout(bots,edit=True,co2=[20,20])
     else:
       maya.cmds.rowLayout(bots,edit=True,co3=[20,40,20])
-    maya.cmds.showWindow(self.concWindow)
-
-
-  def showUI2(self):
-    uiS = self.getUiString()
-    if not uiS:
-      print "Unable to find UI file!"
-      # TO-DO: build vanilla UI from scratch?
-      return
-    else:
-      # print uiS
-      self.concWindow = maya.cmds.loadUI(uiString=uiS,verbose=False)
-    # print '"%s"'%(self.concWindow) #temporary
-    maya.cmds.window(self.concWindow,edit=True,topLeftCorner=[200,200])
-    logLabel = self.concWindow+"|central|mainVtLayout|logLabel"
-    dl = []
-    if self.already_okay():
-      title = self.concWindow+"|central|mainVtLayout|Title"
-      maya.cmds.text(title,edit=True,label="No Changes")
-      dl.append("No changes needed!")
-      dl.append("This scene is already fine.")
-      dl.append("")
-      dl.append("Enjoy.")
-      # diyBtn = self.concWindow+"|central|mainVtLayout|btnHzLayout|diyBtn"
-      diyBtn = self.concWindow+"|central|mainVtLayout|diyBtn"
-      maya.cmds.deleteUI(diyBtn) # no need for it
-    else:
-      for d in self.desc:
-        ds = d
-        if ds.__contains__('%d'):
-          ds = ds % (self.desc[d])
-        dl.append(ds)
-    h = maya.cmds.window(self.concWindow,query=True,height=True)
-    maya.cmds.window(self.concWindow,edit=True,height=(h+100))
-    h = maya.cmds.text(logLabel,query=True,height=True)
-    maya.cmds.text(logLabel,edit=True,height=(h+100))
-    maya.cmds.text(logLabel,edit=True,label="\n".join(dl))
-    maya.cmds.showWindow(self.concWindow)
+    maya.cmds.showWindow(self.window)
 
   # button handlers
   def okHandler(self, *args):
     if not self.already_okay():
       print "Happy to be of service!"
-    maya.cmds.deleteUI(self.concWindow)
-    self.concWindow = None
+    maya.cmds.deleteUI(self.window)
+    self.window = None
   def diyHandler(self, *args):
     print "# Reverting these changes: ######"
     self.undo_all()
@@ -306,8 +231,9 @@ class Service(object):
     if self.iblUpdate:
       print "# mental ray IBL stringOptions not reverted"
     print "# end of Concierge log ##########"
-    maya.cmds.deleteUI(self.concWindow)
-    self.concWindow = None
+    maya.cmds.deleteUI(self.window)
+    self.window = None
+
   def helpHandler(self, *args):
     helpText = """The concierge will do its best to prep your scene
 for use with the Caustic Visualizer. It checks and properly
@@ -319,30 +245,8 @@ If you choose not to approve these actions, Concierge will revert
 all Maya settings, and will also write to the Maya Script Editor
 window a complete listing of what it *would* have altered --
 you can copy and paste these commands selectively yourself."""
-    print helpText
-    titleText = 'Caustic Concierge Help'
-    if self.helpWindow:
-      if maya.cmds.window(self.helpWindow,exists=True):
-        maya.cmds.deleteUI(self.helpWindow,window=True)
-    self.helpWindow = maya.cmds.window(menuBar=False,sizeable=False,title='Concierge Help')
-    vert = maya.cmds.columnLayout(p=self.helpWindow,rs=16,cal='center',adj=True)
-    tops = maya.cmds.rowLayout(p=vert,nc=2,bgc=[0,0,0],co2=[5,20])
-    visBtn = maya.cmds.iconTextButton('Visualizer',image=self.logoFile,p=tops,command=Service.use.webHandler)
-    title = maya.cmds.text('title',p=tops,label=titleText,font='boldLabelFont',width=30+len(titleText*10))
-    maya.cmds.setParent('..')
-    maya.cmds.text(p=vert,label=helpText,wordWrap=True)
-    okayBtn = maya.cmds.iconTextButton(p=vert,label='Got It',st='textOnly',width=260,flat=True,bgc=[.45,.2,.2],mw=10,font='boldLabelFont',command=Service.use.helpOkHandler)
-    maya.cmds.showWindow(self.helpWindow)
+    self.showHelpWindow(Message=helpText,DispTitle='Caustic Concierge Help',WinTitle="Concierge Help")
 
-  def helpOkHandler(self, *args):
-    print "Happy to be of service!"
-    maya.cmds.deleteUI(self.helpWindow)
-    self.helpWindow = None
-
-  def webHandler(self, *args):
-    maya.cmds.launch(web="https://www.caustic.com/visualizer/maya/")
-
-############## UI BITS ###############
 
 ######### FIND AND FIX MAYA STUFF ###################################################
 
@@ -426,10 +330,6 @@ def smells_mental():
     if maya.cmds.attributeQuery('miFactoryNode',node=M,exists=True) or \
       maya.cmds.attributeQuery('miForwardDefinition',node=M,exists=True):
       return True
-
-###########################
-
-###########################
 
 ############
 
