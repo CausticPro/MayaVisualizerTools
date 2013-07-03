@@ -16,7 +16,8 @@ Visualizer Tools Common Windowing Elements for consistent UX and look
 
 import sys
 import os
-import maya
+import maya.cmds
+import maya.mel
 import re
 # import unittest2
 
@@ -30,7 +31,7 @@ class CVToolUtil(object):
 		self.helpWindow = None
 		self.vertLyt = None
 		self.statusText = None
-                self.appVersion = maya.mel.eval('getApplicationVersionAsFloat();')
+		self.appVersion = maya.mel.eval('getApplicationVersionAsFloat();')
 		CVToolUtil.use = self
 		self.helpURL = HelpURL
 		if not CVToolUtil.logoFile:
@@ -39,7 +40,11 @@ class CVToolUtil(object):
 	# UI bits
 	def findCausticLogo(self,Logo='CausticVisualizerLogo.png'):
 		"track down the logo file -- may be in different places depending on the version of Maya being used"
-		ml = maya.cmds.pluginInfo('CausticVisualizer.mll',query=True,path=True)
+		try:
+			ml = maya.cmds.pluginInfo('CausticVisualizer.mll',query=True,path=True)
+		except:
+			print "Caustic Visualizer is not installed!"
+			return None
 		ml = os.path.normpath(ml)
 		ml = os.path.split(os.path.split(ml)[0])[0]
 		logoFile = os.path.join(ml,'icons',Logo)
