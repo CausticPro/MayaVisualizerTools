@@ -64,7 +64,10 @@ class CVToolUtil(object):
 		self.helpWindow = maya.cmds.window(menuBar=False,sizeable=False,title=WinTitle)
 		vert = maya.cmds.columnLayout(p=self.helpWindow,rs=16,cal='center',adj=True)
 		tops = maya.cmds.rowLayout(p=vert,nc=2,bgc=[0,0,0],co2=[5,20])
-		visBtn = maya.cmds.iconTextButton('Visualizer',image=CVToolUtil.logoFile,p=tops,command=CVToolUtil.use.webHandler)
+		if CVToolUtil.logoFile:
+			visBtn = maya.cmds.iconTextButton('Visualizer',image=CVToolUtil.logoFile,p=tops,command=CVToolUtil.use.webHandler)
+		else:
+			visBtn = maya.cmds.iconTextButton('Visualizer',st='textOnly',label='Visualizer for Maya',font='smallPlainLabelFont',p=tops,command=CVToolUtil.use.webHandler)
 		title = maya.cmds.text('title',p=tops,label=DispTitle,font='boldLabelFont',width=30+10*len(DispTitle))
 		maya.cmds.setParent('..')
 		maya.cmds.text(p=vert,label=Message,wordWrap=True)

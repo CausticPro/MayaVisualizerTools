@@ -76,7 +76,10 @@ class Service(CVToolUtil):
     if t is tuple:
       print "some sort of tuple, oops"
       return
-    maya.cmds.setAttr(Name,self.val[Name])
+    try:
+      maya.cmds.setAttr(Name,self.val[Name])
+    except:
+      print 'Error setting "%s" to %s'%(Name,self.val[Name])
 
   def undo(self,Name):
     "actually send this value to Maya"
@@ -87,7 +90,10 @@ class Service(CVToolUtil):
     if t is tuple:
       print "some sort of tuple, oops"
       return
-    maya.cmds.setAttr(Name,self.prev[Name])
+    try:
+      maya.cmds.setAttr(Name,self.prev[Name])
+    except:
+      print 'Error setting "%s" to %s'%(Name,self.prev[Name])
 
   def log(self,Name):
     "don't actually send this value to Maya"
@@ -116,11 +122,20 @@ class Service(CVToolUtil):
 
   def problem_texture_finder(self):
     "Look for unsupported texture formats -- TO-DO imporove"
+    filenodes = []
+    try:
+      filenodes =  maya.cmds.ls(type="file")
+    except:
+      print "Err: cannot access file nodes"
+      return
     for f in maya.cmds.ls(type="file"):
-      fn = maya.cmds.getAttr(f+".ftn").lower()
-      m = re.search(r'\.(map|psd|iff)$',fn)
-      if m:
-        print ('Caution: problem %s texture\n\t"%s"\n' % (m.groups(0)[0],fn))
+      try:
+        fn = maya.cmds.getAttr(f+".ftn").lower()
+        m = re.search(r'\.(map|psd|iff)$',fn)
+        if m:
+          print ('Caution: problem %s texture\n\t"%s"\n' % (m.groups(0)[0],fn))
+      except:
+        print '\tUnable to check texture format for "%f"'
 
   def calculate_needs(self):
     """
@@ -140,32 +155,47 @@ class Service(CVToolUtil):
     if neverTraced:
       # reduce reflectivity
       for M in maya.cmds.ls(materials=True):
-        if maya.cmds.attributeQuery('reflectivity',node=M,exists=True):
-          reflAttr = M+".reflectivity"
-          if maya.cmds.getAttr(reflAttr) == 0.5: # the untraced default: let's drop it to zero
-            self.cache(reflAttr,0.0,"Reflectivity tuned for %d materials")
+        try:
+          if maya.cmds.attributeQuery('reflectivity',node=M,exists=True):
+            reflAttr = M+".reflectivity"
+            try:
+              if maya.cmds.getAttr(reflAttr) == 0.5: # the untraced default: let's drop it to zero
+                self.cache(reflAttr,0.0,"Reflectivity tuned for %d materials")
+            except:
+              print "issue with node %s"%(M)
+        except:
+          print "issue with material %s reflectivity"%(M)
     if hasUsedMental:
       # make sure area lights use the right shape
       for L in maya.cmds.ls(type="areaLight"): # only if mental is active? TO-DO: find out
         self.cache(L+".areaLight",True,"%d Area lights tuned")
         self.cache(L+".useRayTraceShadows",True,"Area light shadow attrs adjusted")
-        if maya.cmds.getAttr(L+".shadowRays") == 1:
-          self.cache(L+".shadowRays",8,"Area light shadow rays increased") # chosen after CO chat
+        try:
+          if maya.cmds.getAttr(L+".shadowRays") == 1:
+            self.cache(L+".shadowRays",8,"Area light shadow rays increased") # chosen after CO chat
+        except:
+          print "issue with light %s"%(L)
       if maya.cmds.getAttr("miDefaultOptions.finalGather"):
         # final gather vs diffuse
-        fgRays = maya.cmds.getAttr("miDefaultOptions.finalGatherRays")
-        if fgRays > 24:   # TO-DO -- what value REALLY????
-          fgRays = int(fgRays/50)
-          fgRays = min(fgRays,1)
-        self.cache("miDefaultOptions.finalGatherRays",fgRays,"GI Rays adjusted") # ??????
-        self.cache("CausticVisualizerBatchSettings.giMaxPrimaryRays",fgRays,"GI Rays adjusted")
-        self.cache("CausticVisualizerSettings.giMaxPrimaryRays",fgRays,"GI Rays adjusted")
-        cvPasses = maya.cmds.getAttr("CausticVisualizerBatchSettings.multiPassPasses")
-        if cvPasses < 24:
-          self.cache("CausticVisualizerBatchSettings.multiPassPasses",24,"Pass Count Improved")
-        cvPasses = maya.cmds.getAttr("CausticVisualizerSettings.multiPassPasses")
-        if cvPasses < 24:
-          self.cache("CausticVisualizerSettings.multiPassPasses",24,"Pass Count Improved")
+        try:
+          fgRays = maya.cmds.getAttr("miDefaultOptions.finalGatherRays")
+          if fgRays > 24:   # TO-DO -- what value REALLY????
+            fgRays = int(fgRays/50)
+            fgRays = min(fgRays,1)
+          self.cache("miDefaultOptions.finalGatherRays",fgRays,"GI Rays adjusted") # ??????
+        except:
+          print "issue with miDefaultOptions"
+        try:
+          self.cache("CausticVisualizerBatchSettings.giMaxPrimaryRays",fgRays,"GI Rays adjusted")
+          self.cache("CausticVisualizerSettings.giMaxPrimaryRays",fgRays,"GI Rays adjusted")
+          cvPasses = maya.cmds.getAttr("CausticVisualizerBatchSettings.multiPassPasses")
+          if cvPasses < 24:
+            self.cache("CausticVisualizerBatchSettings.multiPassPasses",24,"Pass Count Improved")
+          cvPasses = maya.cmds.getAttr("CausticVisualizerSettings.multiPassPasses")
+          if cvPasses < 24:
+            self.cache("CausticVisualizerSettings.multiPassPasses",24,"Pass Count Improved")
+        except:
+          print "issue with CV nodes"
     # set clipped filtering on
     self.cache("CausticVisualizerBatchSettings.clipFinalShadedColor",True,"Image range clipping adjusted")
     # make sure adaptive is on
@@ -275,21 +305,32 @@ def expected_plugin(Name):
 
 def cv_assign_mr_stringopt(Name,Type,Value):
   "python version of mel script"
+  prevName = None
   for i in range(0,200):
       attr = "miDefaultOptions.stringOptions[%d]" % (i)
-      prevName = maya.cmds.getAttr(attr+".name")
+      try:
+        prevName = maya.cmds.getAttr(attr+".name")
+      except:
+        print "issue with %s"%(attr)
+        break
       if prevName == "":        # we ran off the end of mental ray's existing list
         print "Adding '%s'=(%s) as stringOption[%d]" % (Name,Value,i)
-        maya.cmds.setAttr(attr+".name",Name,type="string")
-        maya.cmds.setAttr(attr+".type",Type,type="string")
-        maya.cmds.setAttr(attr+".value",Value,type="string")
+        try:
+          maya.cmds.setAttr(attr+".name",Name,type="string")
+          maya.cmds.setAttr(attr+".type",Type,type="string")
+          maya.cmds.setAttr(attr+".value",Value,type="string")
+        except:
+          print "Error assigning stringOption"
         return True
       elif prevName == Name:         # there is already a stringopt with the desired name
         prevValue = maya.cmds.getAttr(attr+".value")
         if prevValue == Value:
           # print "The '%s' stringOption is already set to [%s] - Great!" % (Name,Value)
           return False # the existing value is already the desired value
-        maya.cmds.setAttr(attr+".value",Value,type="string")
+        try:
+          maya.cmds.setAttr(attr+".value",Value,type="string")
+        except:
+          print "Error setting %s.value"%(attr)
         print "Changing '%s' stringOption from [%s] to [%s]" % (Name,prevValue,Value) 
         return True
   # maya.cmds.warning("Hmm, never got to '%s'\n" % (Name))
@@ -322,9 +363,12 @@ def is_mental():
   if renderer == 'mentalRay':
     return True # that was easy
   if renderer == 'CausticVisualizer':
-    emulator = maya.cmds.getAttr("CausticVisualizerBatchSettings.rendererEmulation")
-    if emulator == 2:  # hopefully this never chnages!!!
-      return True # we are in mental emulaton mode
+    try:
+      emulator = maya.cmds.getAttr("CausticVisualizerBatchSettings.rendererEmulation")
+      if emulator == 2:  # hopefully this never chnages!!!
+        return True # we are in mental emulaton mode
+    except:
+      print "issue with emulation"
   return False
 
 def smells_mental():
@@ -333,9 +377,13 @@ def smells_mental():
   if renderer == 'mentalRay':
     return True # that was easy
   for M in maya.cmds.ls(materials=True):
-    if maya.cmds.attributeQuery('miFactoryNode',node=M,exists=True) or \
-      maya.cmds.attributeQuery('miForwardDefinition',node=M,exists=True):
-      return True
+    try:
+      if maya.cmds.attributeQuery('miFactoryNode',node=M,exists=True) or \
+        maya.cmds.attributeQuery('miForwardDefinition',node=M,exists=True):
+        return True
+    except:
+      print "Not finding %s mental attrs"%(M)
+  return False
 
 ############
 
@@ -347,9 +395,14 @@ def Prep():
   aList = Service()
   if not expected_plugin("CausticVisualizer"):
     # load it
-    plugRes = maya.cmds.loadPlugin("CausticVisualizer.mll")
-    if len(plugRes) < 1:
-      maya.cmds.warning('Unable to load the Visualizer plugin!\nCheck your installation.\n')
+    try:
+      plugRes = maya.cmds.loadPlugin("CausticVisualizer.mll")
+      if len(plugRes) < 1:
+        maya.cmds.warning('Unable to load the Visualizer plugin!\nCheck your installation.\n')
+        return
+    except:
+      print "Sorry, cannot load Caustic Visualizer!!"
+      aList.showHelpWindow(Message="Sorry, Caustic Visulaizer cannot be Loaded",DispTitle='Caustic Concierge Halt',WinTitle="Concierge Fail")
       return
   needed_node("CausticVisualizerBatchSettings")
   needed_node("CausticVisualizerSettings")
