@@ -196,19 +196,23 @@ class Service(CVToolUtil):
             self.cache("CausticVisualizerSettings.multiPassPasses",24,"Pass Count Improved")
         except:
           print "issue with CV nodes"
+    # color setup is based on expected output format
+    use8Bit = is_8_bit()
     # set clipped filtering on
-    self.cache("CausticVisualizerBatchSettings.clipFinalShadedColor",True,"Image range clipping adjusted")
+    self.cache("CausticVisualizerBatchSettings.clipFinalShadedColor",use8Bit,"Image range clipping adjusted")
     # make sure adaptive is on
     self.cache("CausticVisualizerBatchSettings.multiPassAdaptive",True,"Adaptive Sampling Enabled")
     self.cache("CausticVisualizerSettings.multiPassAdaptive",True,"Adaptive Sampling Enabled")
     # set up linear sRGB color workflow
-    self.cache("defaultRenderGlobals.colorProfileEnabled",True,"Color Profile Tuned")
-    self.cache("defaultRenderGlobals.inputColorProfile",3,"Color Profile Tuned")
-    self.cache("defaultRenderGlobals.outputColorProfile",2,"Color Profile Tuned")
-    self.cache("defaultViewColorManager.imageColorProfile",2,"Color Profile Tuned")
-    self.cache("defaultViewColorManager.displayColorProfile",3,"Color Profile Tuned")
-    self.cache("defaultViewColorManager.exposure",0.0,"Color Profile Tuned")
-    self.cache("defaultViewColorManager.contrast",0.0,"Color Profile Tuned")
+    msg = "8-bit Color Profile Tuned" if use8Bit else "Floating-Point Color Profile Tuned"
+    self.cache("defaultRenderGlobals.colorProfileEnabled",True,msg)
+    self.cache("defaultRenderGlobals.inputColorProfile",3,msg)
+    connectProfile = 3 if use8Bit else 2
+    self.cache("defaultRenderGlobals.outputColorProfile",connectProfile,msg) 
+    self.cache("defaultViewColorManager.imageColorProfile",connectProfile,msg) 
+    self.cache("defaultViewColorManager.displayColorProfile",3,msg)
+    self.cache("defaultViewColorManager.exposure",0.0,msg)
+    self.cache("defaultViewColorManager.contrast",0.0,msg)
     self.problem_texture_finder()
     ## 
     # how to handle Enable Diffuse and Enable Caustic?
@@ -355,6 +359,19 @@ def update_string_options():
     maya.cmds.select(prevSel)
   return changes
 
+##
+
+def is_8_bit():
+  "try to tell if the output is 8bit or what"
+  renderer = maya.mel.eval("currentRenderer();")
+  if renderer == 'CausticVisualizer':
+    fmt = maya.cmds.getAttr('CausticVisualizerBatchSettings.imageFormat')
+    return  (fmt != 0) and (fmt != 5) # i.e., EXR or TIFF
+  fmt =  maya.cmds.getAttr('defaultRenderGlobals.imageFormat')
+  if fmt > 50:
+    return False
+  return True
+ 
 ## detect mental ray ######
 
 def is_mental():
@@ -384,8 +401,6 @@ def smells_mental():
     except:
       print "Not finding %s mental attrs"%(M)
   return False
-
-############
 
 def Prep():
   """
@@ -417,4 +432,3 @@ def Prep():
   aList.showUI()
   return
 
-# Prep()
