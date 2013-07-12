@@ -21,6 +21,60 @@ import maya.mel
 import re
 # import unittest2
 
+class CVTButton(object):
+	appVersion = None
+	def __init__(self,Parent=None,Label='Label',Col=[.3,.3,.3],Width=120,Cmd=None,Anno="Tooltip",Font='plainLabelFont'):
+		"A generic button gives these scripts a consistent look"
+		cmd = Cmd
+		if cmd is None:
+			print "assigning dummy callback to '%s' button" % (Label)
+			cmd = self.defaultHandler
+		self.btn = None
+		if CVTButton.appVersion is None:
+			CVTButton.appVersion = maya.mel.eval('getApplicationVersionAsFloat();')
+		if CVTButton.appVersion > 2013:
+			self.btn = maya.cmds.iconTextButton(p=Parent,label=Label,st='textOnly',flat=True,bgc=Col,width=Width,command=cmd,annotation=Anno,font=Font)
+		else:
+			self.btn = maya.cmds.iconTextButton(p=Parent,label=Label,st='textOnly',bgc=Col,width=Width,command=cmd,annotation=Anno,font=Font)
+
+	def defaultHandler(self, *args):
+		"use this when you don't know what to do"
+		print "CVTButton"
+
+	def enable(self,Value=True):
+		maya.cmds.iconTextButton(self.btn,edit=True,enable=Value)
+
+
+# ############################################
+
+class CVTCheckBox(CVTButton):
+	def __init__(self,Parent=None,Label='Label',OffLabel=None,OffCol=[.3,.3,.3],OnCol=[.6,.5,.3],Width=120,Cmd=None,Anno="Tooltip",Value=False):
+		"A generic check button gives these scripts a consistent look"
+		super(CVTCheckBox,self).__init__(Parent=Parent,Label=Label,Col=OffCol,Width=Width,Cmd=Cmd,Anno=Anno)
+		self.value = Value #boolean
+		self.onLabel = Label
+		self.offLabel = OffLabel
+		self.onCol = OnCol
+		self.offCol = OffCol
+		self.update()
+	def update(self):
+		"set color according to state"
+		cl = self.onCol if self.value else self.offCol
+		lb = self.onLabel
+		if self.offLabel and not self.value:
+			lb = self.offLabel
+		maya.cmds.iconTextButton(self.btn,edit=True,bgc=cl,label=lb)
+	def set(self,Value=None):
+		if Value is None:
+			self.value = not self.value
+		else:
+			self.value = Value
+		self.update()
+	def defaultHandler(self, *args):
+		self.set() # toggles & updates
+
+# ###############################
+
 class CVToolUtil(object):
 	use = None
 	logoFile = None
@@ -98,6 +152,10 @@ class CVToolUtil(object):
 		self.vertLyt = None
 		self.window = None
 
+	def dummyHandler(self, *args):
+		"use this when you don't know what to do"
+		print "click"
+
 	# ##########
 
 	def updateUI(self,SelName=None):
@@ -129,21 +187,24 @@ class CVToolUtil(object):
 		else:
 			print Text
 
-
 	def helpCloseFooter(self,Parent=None):
 		"help and close buttons -- no others, no OKAY etc"
 		par = Parent
 		if not par:
 			par = self.vertLyt
 		botCol = maya.cmds.rowLayout(nc=3,parent=par,ct2=['left','right'],co2=[4,4],adjustableColumn=2)
-                if self.appVersion > 2013:
-                  maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',flat=True,bgc=[.4,.4,.3],width=120,command=CVToolUtil.use.helpHandler,annotation='Get help from the Caustic website')
-                  maya.cmds.text(label=' ') # dummy
-                  maya.cmds.iconTextButton(p=botCol,label='Close',st='textOnly',flat=True,bgc=[.4,.3,.3],width=120,command=CVToolUtil.use.closeHandler,annotation='Close this window')
-                else:
-                  maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',bgc=[.4,.4,.3],width=120,command=CVToolUtil.use.helpHandler,annotation='Get help from the Caustic website')
-                  maya.cmds.text(label=' ') # dummy
-                  maya.cmds.iconTextButton(p=botCol,label='Close',st='textOnly',bgc=[.4,.3,.3],width=120,command=CVToolUtil.use.closeHandler,annotation='Close this window')
+		CVTButton(Parent=botCol,Label='Help',Col=[.4,.4,.3],Cmd=CVToolUtil.use.helpHandler,Anno='Get help from the Caustic website')
+		maya.cmds.text(p=botCol,label=' ') # dummy
+		CVTButton(Parent=botCol,Label='Close',Col=[.4,.3,.3],Cmd=CVToolUtil.use.closeHandler,Anno='Close this window')
+		"""if self.appVersion > 2013:
+			maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',flat=True,bgc=[.4,.4,.3],width=120,command=CVToolUtil.use.helpHandler,annotation='Get help from the Caustic website')
+			maya.cmds.text(label=' ') # dummy
+			maya.cmds.iconTextButton(p=botCol,label='Close',st='textOnly',flat=True,bgc=[.4,.3,.3],width=120,command=CVToolUtil.use.closeHandler,annotation='Close this window')
+		else:
+			maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',bgc=[.4,.4,.3],width=120,command=CVToolUtil.use.helpHandler,annotation='Get help from the Caustic website')
+			maya.cmds.text(label=' ') # dummy
+			maya.cmds.iconTextButton(p=botCol,label='Close',st='textOnly',bgc=[.4,.3,.3],width=120,command=CVToolUtil.use.closeHandler,annotation='Close this window')
+		"""
 
 	def startUI(self,DispTitle="Generic Window",WinTitle="CV Win",WinName="CVW"):
 		if self.window:
@@ -153,5 +214,20 @@ class CVToolUtil(object):
 		self.window = maya.cmds.window(menuBar=False,sizeable=False,title=WinTitle)
 		self.vertLyt = maya.cmds.columnLayout(p=self.window,rs=6,cal='center',adj=True,cat=['both',0],co=['both',0])
 		self.visHeader(DispTitle=DispTitle)
+
+	def force_cv_node(self,Name='Error'):
+		if len(maya.cmds.ls(Name)) < 1:
+			n = maya.cmds.createNode(Name,name=Name,shared=True,skipSelect=True)
+			if n != Name:
+				print "Cannot create '%s' node!"%(Name)
+				return False
+		return True
+
+	def force_viewport_settings_node(self):
+		return self.force_cv_node('CausticVisualizerSettings')
+
+	def force_batch_settings_node(self):
+		return self.force_cv_node('CausticVisualizerBatchSettings')
+
 
 # ########################### eof ###

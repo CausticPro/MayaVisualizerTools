@@ -152,20 +152,6 @@ class CVSettingsManager(CVToolUtil):
 		#self.presetNameWin(defName)
 		return self.newName
 
-	def force_cv_node(self,Name='Error'):
-		if len(maya.cmds.ls(Name)) < 1:
-			n = maya.cmds.createNode(Name,name=Name,shared=True,skipSelect=True)
-			if n != Name:
-				print "Cannot create '%s' node!"%(Name)
-				return False
-		return True
-
-	def force_viewport_settings_node(self):
-		return self.force_cv_node('CausticVisualizerSettings')
-
-	def force_batch_settings_node(self):
-		return self.force_cv_node('CausticVisualizerBatchSettings')
-
 	def selected_preset_name(self):
 		nItems = maya.cmds.textScrollList(self.prList,query=True,nsi=True)
 		if nItems < 1:
