@@ -1,5 +1,5 @@
 """
-Visualizer Tools Common Windowing Elements for consistent UX and look
+Visualizer Tools: Common Management & Windowing Elements for consistent UX and look
 
 
 # TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SOFTWARE IS PROVIDED
@@ -22,8 +22,12 @@ import re
 # import unittest2
 
 class CVTButton(object):
+	"""
+	A replacement for Maya's button control.
+	It uses a "flat" look via iconTextButton, and makes the call correctly according to version of Maya.
+	"""
 	appVersion = None
-	def __init__(self,Parent=None,Label='Label',Col=[.3,.3,.3],Width=120,Cmd=None,Anno="Tooltip",Font='plainLabelFont'):
+	def __init__(self,Parent=None,Label='Label',Col=[.3,.3,.3],Width=120,Height=30,Cmd=None,Anno="Tooltip",Font='plainLabelFont'):
 		"A generic button gives these scripts a consistent look"
 		cmd = Cmd
 		if cmd is None:
@@ -33,9 +37,9 @@ class CVTButton(object):
 		if CVTButton.appVersion is None:
 			CVTButton.appVersion = maya.mel.eval('getApplicationVersionAsFloat();')
 		if CVTButton.appVersion > 2013:
-			self.btn = maya.cmds.iconTextButton(p=Parent,label=Label,st='textOnly',flat=True,bgc=Col,width=Width,command=cmd,annotation=Anno,font=Font)
+			self.btn = maya.cmds.iconTextButton(p=Parent,label=Label,st='textOnly',flat=True,bgc=Col,width=Width,height=Height,command=cmd,annotation=Anno,font=Font)
 		else:
-			self.btn = maya.cmds.iconTextButton(p=Parent,label=Label,st='textOnly',bgc=Col,width=Width,command=cmd,annotation=Anno,font=Font)
+			self.btn = maya.cmds.iconTextButton(p=Parent,label=Label,st='textOnly',bgc=Col,width=Width,height=Height,command=cmd,annotation=Anno,font=Font)
 
 	def defaultHandler(self, *args):
 		"use this when you don't know what to do"
@@ -48,9 +52,13 @@ class CVTButton(object):
 # ############################################
 
 class CVTCheckBox(CVTButton):
-	def __init__(self,Parent=None,Label='Label',OffLabel=None,OffCol=[.3,.3,.3],OnCol=[.6,.5,.3],Width=120,Cmd=None,Anno="Tooltip",Value=False):
+	"""
+	A replacement for Maya's checkbox control, based on CVTButton. Instead of a checked icon,
+	   this checkbox changes color and label to indicate its state, and only has one simpler "Cmd" callback.
+	"""
+	def __init__(self,Parent=None,Label='Label',OffLabel=None,OffCol=[.3,.3,.3],OnCol=[.6,.5,.3],Width=120,Height=30,Cmd=None,Anno="Tooltip",Value=False):
 		"A generic check button gives these scripts a consistent look"
-		super(CVTCheckBox,self).__init__(Parent=Parent,Label=Label,Col=OffCol,Width=Width,Cmd=Cmd,Anno=Anno)
+		super(CVTCheckBox,self).__init__(Parent=Parent,Label=Label,Col=OffCol,Width=Width,Height=Height,Cmd=Cmd,Anno=Anno)
 		self.value = Value #boolean
 		self.onLabel = Label
 		self.offLabel = OffLabel
@@ -76,6 +84,13 @@ class CVTCheckBox(CVTButton):
 # ###############################
 
 class CVToolUtil(object):
+	"""
+	A generic tool window class (and related helpwindow) for Caustic Visualizer-related tools.
+	This class provides some common operations when dealing with Visualizer queries and UI issues.
+	Note the "use" class property, that lets us create control items with a known-at-root scope (which Maya needs),
+	and the "logoFile" item which tracks down the Caustic logo (regardless of where the installer has
+		placed it, depending on your version of Maya)
+	"""
 	use = None
 	logoFile = None
 
@@ -125,10 +140,7 @@ class CVToolUtil(object):
 		title = maya.cmds.text('title',p=tops,label=DispTitle,font='boldLabelFont',width=30+10*len(DispTitle))
 		maya.cmds.setParent('..')
 		maya.cmds.text(p=vert,label=Message,wordWrap=True)
-                if self.appVersion > 2013:
-                  okayBtn = maya.cmds.iconTextButton(p=vert,label='Got It',st='textOnly',width=260,flat=True,bgc=[.45,.2,.2],mw=10,font='boldLabelFont',command=CVToolUtil.use.helpOkHandler)
-                else:
-                  okayBtn = maya.cmds.iconTextButton(p=vert,label='Got It',st='textOnly',width=260,bgc=[.45,.2,.2],mw=10,font='boldLabelFont',command=CVToolUtil.use.helpOkHandler)
+		okayBtn = CVTButton(Parent=vert,Label='Got It',Width=260,Col=[.45,.2,.2],Font='boldLabelFont',Cmd=CVToolUtil.use.helpOkHandler)
 		maya.cmds.showWindow(self.helpWindow)
 
 	# button handlers
@@ -194,17 +206,9 @@ class CVToolUtil(object):
 			par = self.vertLyt
 		botCol = maya.cmds.rowLayout(nc=3,parent=par,ct2=['left','right'],co2=[4,4],adjustableColumn=2)
 		CVTButton(Parent=botCol,Label='Help',Col=[.4,.4,.3],Cmd=CVToolUtil.use.helpHandler,Anno='Get help from the Caustic website')
-		maya.cmds.text(p=botCol,label=' ') # dummy
+		#maya.cmds.text(p=botCol,label=' ') # dummy
+		maya.cmds.separator(p=botCol,style='none')
 		CVTButton(Parent=botCol,Label='Close',Col=[.4,.3,.3],Cmd=CVToolUtil.use.closeHandler,Anno='Close this window')
-		"""if self.appVersion > 2013:
-			maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',flat=True,bgc=[.4,.4,.3],width=120,command=CVToolUtil.use.helpHandler,annotation='Get help from the Caustic website')
-			maya.cmds.text(label=' ') # dummy
-			maya.cmds.iconTextButton(p=botCol,label='Close',st='textOnly',flat=True,bgc=[.4,.3,.3],width=120,command=CVToolUtil.use.closeHandler,annotation='Close this window')
-		else:
-			maya.cmds.iconTextButton(p=botCol,label='Help',st='textOnly',bgc=[.4,.4,.3],width=120,command=CVToolUtil.use.helpHandler,annotation='Get help from the Caustic website')
-			maya.cmds.text(label=' ') # dummy
-			maya.cmds.iconTextButton(p=botCol,label='Close',st='textOnly',bgc=[.4,.3,.3],width=120,command=CVToolUtil.use.closeHandler,annotation='Close this window')
-		"""
 
 	def startUI(self,DispTitle="Generic Window",WinTitle="CV Win",WinName="CVW"):
 		if self.window:

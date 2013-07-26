@@ -22,40 +22,50 @@ ShadowPanel()
 """
 
 # TO-DO 
-# spot penumbra coneangle dropoff
-# shadowColor for all
-# ambi ambientShade
+# Metering on object constraint
 #
-# master dimmer: before updating intensity sliders check their ranges against the desired value!
-# meters
-# new light/duplicate?
-# add IBL
+# add IBL and physical sky setups
 
-
-
-import sys
-import os
+import sys, os , re, math
 import maya
-import re
-import math
 from  CVToolUtil import *
 
 class DecayButton(CVTButton):
 	rateNames = ["No Decay","Linear","Quadratic","Cubic"]
-	rateColors = [[0.2,0.2,0.2], [.4,.3,.3], [.2,.3,.2], [.2,.3,.45]]
-	def __init__(self,Parent=None,Width=54,Cmd=None):
-		"A generic check button gives these scripts a consistent look"
-		super(DecayButton,self).__init__(Parent=Parent,Width=Width,Cmd=Cmd,Anno='Distance Falloff')
+	rateColors = [[0.2,0.2,0.2], [.4,.35,.35], [.25,.3,.25], [.3,.35,.45]]
+	def __init__(self,Parent=None,Width=54,Cmd=None,Height=35):
+		"A generic enum button gives these scripts a consistent look"
+		super(DecayButton,self).__init__(Parent=Parent,Width=Width,Cmd=Cmd,Anno='Distance Falloff',Height=Height)
 		self.rate = 0
 		self.update()
+		print maya.cmds.iconTextButton(self.btn,query=True,height=True)
 	def set(self,Rate):
 		self.rate = Rate
 		if self.rate >= 4:
 			self.rate = 0
 		return self.rate
 	def update(self):
-		maya.cmds.iconTextButton(self.btn,edit=True,label=DecayButton.rateNames[self.rate],bgc=DecayButton.rateColors[self.rate])
-	
+		maya.cmds.iconTextButton(self.btn,edit=True,label=DecayButton.rateNames[self.rate],
+			bgc=DecayButton.rateColors[self.rate])
+
+class LampButton(CVTButton):
+	"""
+	A replacement for Maya's button control.
+	It uses a "flat" look via iconTextButton, and makes the call correctly according to version of Maya.
+	"""
+	icons = {'directionalLight':'directionallight.png',
+			'spotLight':'spotlight.png',
+			'ambientLight':'ambientlight.png',
+			'pointLight':'pointlight.png'}
+	def __init__(self,Parent=None,Label='Label',Col=[.3,.3,.3],Width=120,Height=35,Cmd=None,Anno="Tooltip",Font='plainLabelFont',Type=''):
+		"A generic button gives these scripts a consistent look"
+		super(LampButton,self).__init__(Parent=Parent,Label=Label,Width=Width,Height=Height,Cmd=Cmd,Anno=Anno,Font=Font)
+		i = LampButton.icons.get(Type)
+		if i is None:
+			return
+		cx = maya.cmds.iconTextButton(self.btn,query=True,bgc=True)
+		maya.cmds.iconTextButton(self.btn,edit=True,st='iconAndTextHorizontal',image=i,mw=4,bgc=cx)
+
 # ############################
 
 class Lamp(object):
@@ -65,6 +75,7 @@ class Lamp(object):
 		self.shape = ShapeNode
 		self.xform = None
 		self.master = None
+		self.expr = None # potentialy a maya expression for meter-object linking
 		if len(maya.cmds.ls(ShapeNode)) < 1:
 			self.shape = None # FAIL: no such node
 			return
@@ -84,7 +95,10 @@ class Lamp(object):
 		self.flush_controls()
 
 	def select(self):
-		maya.cmds.select(self.xform)
+		if self.xform:
+			maya.cmds.select(self.xform)
+		else:
+			maya.cmds.select(self.shape) # eg ibls and such
 		#if self.xform is not None:
 		#	prev = maya.cmds.ls(sl=True)
 		#	lp = len(prev)
@@ -94,11 +108,10 @@ class Lamp(object):
 	def selectHandler(self, *args):
 		# print 'selectHandler'
 		# self.select()
-		maya.cmds.select(self.xform)
-
-	def toggle_btn(self,Parent=None,Label="Xxx",Col=[.3,.3,.4]):
-		btn = CVTCheckBox(Parent=Parent,Label=Label,OffCol=Col)
-		return btn
+		if self.xform:
+			maya.cmds.select(self.xform)
+		else:
+			maya.cmds.select(self.shape) # eg ibls and such
 
 	def attr(self,Attr):
 		if self.shape is None:
@@ -147,64 +160,6 @@ class Lamp(object):
 		self.specular.defaultHandler()
 		self.setAttr('emitSpecular',self.specular.value)
 		self.select()
-	def colorHandler(self, *args):
-		c = maya.cmds.colorSliderGrp(self.color,query=True,rgb=True)
-		maya.cmds.setAttr(self.shape+'.color',c[0],c[1],c[2],type='double3')
-		self.select()
-	def shadColorHandler(self, *args):
-		c = maya.cmds.colorSliderGrp(self.shadColor,query=True,rgb=True)
-		maya.cmds.setAttr(self.shape+'.shadowColor',c[0],c[1],c[2],type='double3')
-		self.select()
-
-	def lightRadHandler(self, *args):
-		if self.lightRad:
-			existing = self.attr("lightRadius")
-			rad = maya.cmds.floatSliderGrp(self.lightRad,query=True,value=True)
-			if rad != existing:
-				self.setAttr("lightRadius",rad)
-				self.select()
-	def lightAngHandler(self, *args):
-		if self.lightAng:
-			existing = self.attr("lightAngle")
-			rad = maya.cmds.floatSliderGrp(self.lightAng,query=True,value=True)
-			if rad != existing:
-				self.setAttr("lightAngle",rad)
-				self.select()
-	def shadRadHandler(self, *args):
-		if self.shadRad:
-			existing = self.attr("shadowRadius")
-			rad = maya.cmds.floatSliderGrp(self.shadRad,query=True,value=True)
-			if rad != existing:
-				self.setAttr("shadowRadius",rad)
-				self.select()
-	def ambShadeHandler(self, *args):
-		if self.shadRad:
-			existing = self.attr("ambientShade")
-			rad = maya.cmds.floatSliderGrp(self.shadRad,query=True,value=True)
-			if rad != existing:
-				self.setAttr("ambientShade",rad)
-				self.select()
-	def coneHandler(self, *args):
-		if self.cone:
-			existing = self.attr("coneAngle")
-			rad = maya.cmds.floatSliderGrp(self.cone,query=True,value=True)
-			if rad != existing:
-				self.setAttr("coneAngle",rad)
-				self.select()
-	def penHandler(self, *args):
-		if self.penumbra:
-			existing = self.attr("penumbraAngle")
-			rad = maya.cmds.floatSliderGrp(self.penumbra,query=True,value=True)
-			if rad != existing:
-				self.setAttr("penumbraAngle",rad)
-				self.select()
-	def dropHandler(self, *args):
-		if self.dropoff:
-			existing = self.attr("dropoff")
-			rad = maya.cmds.floatSliderGrp(self.dropoff,query=True,value=True)
-			if rad != existing:
-				self.setAttr("dropoff",rad)
-				self.select()
 
 	def decayHandler(self):
 		dRate = self.decay.set(self.attr("decayRate") + 1)
@@ -236,6 +191,10 @@ class Lamp(object):
 		else:
 			v = self.attr("intensity")
 		v *= self.master.dimmerVal
+		if self.master.meterState: # is metering on?
+			if self.lampType != 'ambientLight' and self.lampType != 'directionalLight' and self.decay.rate != 0:
+				meterDist = self.attr('centerOfIllumination')
+				v *= math.pow(meterDist,float(self.decay.rate))
 		# print "%s maya intensity: %g" % (self.xform,v)
 		return v
 
@@ -253,6 +212,25 @@ class Lamp(object):
 			maya.cmds.floatSliderGrp(self.intensity,edit=True,max=newTop)
 		return newTop
 
+	def turn_on_meter(self,PreserveMaya=False):
+		if self.lampType == 'ambientLight' or self.lampType == 'directionalLight' or  self.decay.rate == 0:
+			return # no change anyway
+		if PreserveMaya:
+			i = self.attr('intensity')
+			self.max_intensity(i) # just in case
+			maya.cmds.floatSliderGrp(self.intensity,edit=True,value=i)
+		else:
+			i = self.calculate_maya_intensity()
+			self.setAttr("intensity",i)
+
+	def turn_off_meter(self):
+		if self.lampType == 'ambientLight' or self.lampType == 'directionalLight' or  self.decay.rate == 0:
+			return # no change anyway
+		i = self.attr('intensity')
+		i /= self.master.dimmerVal
+		self.max_intensity(i) # just in case
+		maya.cmds.floatSliderGrp(self.intensity,edit=True,value=i)
+
 	def set_abilities(self):
 		"enable or disable controls based on the current state of the lamp"
 		if self.shadow:
@@ -261,22 +239,13 @@ class Lamp(object):
 			maya.cmds.intFieldGrp(self.shadRays,edit=True,enable=shadowed)
 			maya.cmds.intFieldGrp(self.depthLimit,edit=True,enable=shadowed)
 			if self.shadRad:
-				maya.cmds.floatSliderGrp(self.shadRad,edit=True,enable=shadowed)
+				maya.cmds.attrFieldSliderGrp(self.shadRad,edit=True,enable=shadowed)
 			if self.lightRad:
-				maya.cmds.floatSliderGrp(self.lightRad,edit=True,enable=shadowed)
+				maya.cmds.attrFieldSliderGrp(self.lightRad,edit=True,enable=shadowed)
 			if self.lightAng:
-				maya.cmds.floatSliderGrp(self.lightAng,edit=True,enable=shadowed)
-		if self.color:
-			r = self.attr('colorR')
-			g = self.attr('colorG')
-			b = self.attr('colorB')
-			maya.cmds.colorSliderGrp(self.color,edit=True,rgb=[r,g,b])
-		if self.shadColor:
-			rgb = self.attr('shadowColor')[0]
-			try:
-				maya.cmds.colorSliderGrp(self.shadColor,edit=True,rgb=rgb)
-			except:
-				print self.shape
+				maya.cmds.attrFieldSliderGrp(self.lightAng,edit=True,enable=shadowed)
+			if self.shadColor:
+				maya.cmds.attrColorSliderGrp(self.shadColor,edit=True,enable=shadowed)
 		if self.decay:
 			self.decay.set(self.attr("decayRate"))
 			self.decay.update()
@@ -316,65 +285,81 @@ class Lamp(object):
 		self.master = Master
 		self.flush_controls()
 		self.panel = maya.cmds.columnLayout(p=Parent)
-		toggles = maya.cmds.rowLayout('togs',p=self.panel,nc=6,adjustableColumn=2)
-		self.selectMe = CVTButton(Parent=toggles,Label=self.xform,Col=[.4,.4,.7],Cmd=self.selectHandler,Font='boldLabelFont',Anno='Select %s'%(self.xform))
-		# maya.cmds.iconTextButton(self.selectMe.btn,edit=True,align='left')
-		maya.cmds.text(p=toggles,label=' ')
+		#
+		toggles = maya.cmds.rowLayout('togs',p=self.panel,nc=5,adjustableColumn=4)
+		self.selectMe = LampButton(Parent=toggles,Label='  '+self.xform,Col=[.4,.4,.7],
+			Cmd=self.selectHandler,Font='boldLabelFont',Anno='Select %s'%(self.xform),Type=self.lampType,Height=35)
+		maya.cmds.separator(p=toggles,style='none',width=14)
 		if self.lampType != 'ambientLight':
-			self.shadow = CVTCheckBox(Parent=toggles,Label="Shadow",OffLabel='Unshadowed',Width=80,OffCol=[.6,.6,.6],Value=self.useShadow(),Cmd=self.shadowHandler,Anno='Toggle Shadowing')
+			self.shadow = CVTCheckBox(Parent=toggles,Label="Shadow",OffLabel='Unshadowed',Width=80,
+				OffCol=[.6,.6,.6],OnCol=[.2,.2,.2],Value=self.useShadow(),
+				Cmd=self.shadowHandler,Anno='Toggle Shadowing',Height=35)
 		else:
 			self.shadow = None
 		if maya.cmds.attributeQuery('emitDiffuse',node=self.shape,exists=True): # ambi lights do not have these
-			self.diffuse = CVTCheckBox(Parent=toggles,Label="Diff",OffLabel='NoDiff',Width=40,Value=self.attr('emitDiffuse'),Cmd=self.eDiffHandler,Anno='Emit Diffuse Light?')
-			self.specular = CVTCheckBox(Parent=toggles,Label="Spec",Width=40,OffLabel='NoSpec',Value=self.attr('emitSpecular'),Cmd=self.eSpecHandler,Anno='Emit Specular Light?')
+			maya.cmds.separator(p=toggles,style='none',width=8)
+			tog2 = maya.cmds.rowLayout('tog2',p=toggles,nc=4,adjustableColumn=3)
+			self.diffuse = CVTCheckBox(Parent=tog2,Label="Diff",OffLabel='NoDiff',Width=46,
+				OffCol=[.2,.2,.2],OnCol=[.45,.45,.45],
+				Value=self.attr('emitDiffuse'),Cmd=self.eDiffHandler,Anno='Emit Diffuse Light?',Height=35)
+			self.specular = CVTCheckBox(Parent=tog2,Label="Spec",Width=46,OffLabel='NoSpec',
+				OffCol=[.2,.2,.2],OnCol=[.45,.45,.45],
+				Value=self.attr('emitSpecular'),Cmd=self.eSpecHandler,Anno='Emit Specular Light?',Height=35)
 			if self.lampType != 'directionalLight':
-				self.decay = DecayButton(Parent=toggles,Cmd=self.decayHandler)
-			else:
-				maya.cmds.text(p=toggles,label=' ')
+				maya.cmds.separator(p=tog2,style='none',width=8)
+				self.decay = DecayButton(Parent=tog2,Cmd=self.decayHandler,Height=35)
+		#
+		b = self.calculate_maya_intensity()
+		mi = self.max_intensity(b)
+		cons = maya.cmds.listConnections(self.shape+".intensity")
+		if cons is None:
+			self.intensity = maya.cmds.floatSliderGrp(p=self.panel,label='Intensity',field=True,
+				value=b,max=mi,cw=[1,120],cc=self.intensityHandler,dc=self.intensitySlideHandler,
+				annotation='local intensity')
 		else:
-			maya.cmds.text(p=toggles,label=' ')
-			maya.cmds.text(p=toggles,label=' ')
-			maya.cmds.text(p=toggles,label=' ') # no decay either
-		cons = maya.cmds.listConnections(self.shape+".intensity")
-		if cons is None:
-			b = self.calculate_maya_intensity()
-			mi = self.max_intensity(b)
-			self.intensity = maya.cmds.floatSliderGrp(p=self.panel,label='Intensity',field=True,value=b,max=mi,cw=[1,120],cc=self.intensityHandler,dc=self.intensitySlideHandler,annotation='local intensity')
-		cons = maya.cmds.listConnections(self.shape+".intensity")
-		if cons is None:
-			if self.lampType == 'ambientLight':
-				self.color = maya.cmds.colorSliderGrp(p=self.panel,label='Color',cw=[1,120],cc=self.colorHandler,dc=self.colorHandler,annotation='ambient color')
-			else:
-				crow = maya.cmds.rowLayout('crow',p=self.panel,nc=3,adjustableColumn=2)
-				self.color = maya.cmds.colorSliderGrp(p=crow,label='Color',cw3=[60,60,60],cc=self.colorHandler,dc=self.colorHandler,annotation='lamp color')
-				maya.cmds.text(p=crow,label=' ')
-				self.shadColor = maya.cmds.colorSliderGrp(p=crow,label='Shadow',cw3=[60,30,60],cc=self.shadColorHandler,dc=self.shadColorHandler,annotation='lamp shadow color')
-		if self.lampType == 'spotLight':
-			v = self.attr('coneAngle')
-			self.cone = maya.cmds.floatSliderGrp(p=self.panel,label='Cone Angle',field=True,value=v,max=180.0,cw=[1,120],cc=self.coneHandler,dc=self.coneHandler,annotation='cone angle')
-			v = self.attr('penumbraAngle')
-			self.penumbra = maya.cmds.floatSliderGrp(p=self.panel,label='Penumbra',field=True,value=v,min=-10,max=10.0,cw=[1,120],cc=self.penHandler,dc=self.penHandler,annotation='pensumbrar spread angle')
-			v = self.attr('dropoff')
-			self.dropoff = maya.cmds.floatSliderGrp(p=self.panel,label='DropOff',field=True,value=v,max=255.0,cw=[1,120],cc=self.dropHandler,dc=self.dropHandler,annotation='dropoff against the center of the spotlight')
+			"TO-DO: do not like this! What is the correct behavior???"
+			self.intensity = maya.cmds.attrFieldSliderGrp(p=self.panel,label='Intensity',max=mi,cw=[1,120],hmb=True,
+				at='%s.intensity'%(self.shape))
+		if self.lampType == 'ambientLight':
+			self.color = maya.cmds.attrColorSliderGrp(p=self.panel,label='Color',sb=False,
+				cw=[1,120],at='%s.color'%(self.shape),annotation='ambient color')
+		else:
+			crow = maya.cmds.rowLayout('crow',p=self.panel,nc=3,adjustableColumn=2)
+			self.color = maya.cmds.attrColorSliderGrp(p=crow,label='Color',sb=False,cw4=[56,60,60,8],
+				at='%s.color'%(self.shape),annotation='lamp color')
+			maya.cmds.separator(p=crow,style='none')
+			self.shadColor = maya.cmds.attrColorSliderGrp(p=crow,label='Shadow',sb=False,cw4=[56,30,60,8],
+				at='%s.shadowColor'%(self.shape),annotation='lamp shadow color')
+		#
 		if maya.cmds.attributeQuery('shadowRadius',node=self.shape,exists=True) and self.lampType != 'ambientLight':
-			v = self.attr('shadowRadius')
-			maxR = max(8.0,v)
-			self.shadRad = maya.cmds.floatSliderGrp(p=self.panel,label='Shadow Radius',field=True,value=v,max=maxR,cw=[1,120],cc=self.shadRadHandler,dc=self.shadRadHandler)
+			maxR = max(8.0,self.attr('shadowRadius'))
+			self.shadRad = maya.cmds.attrFieldSliderGrp(p=self.panel,label='Shadow Radius',max=maxR,hmb=True,cw=[1,120],
+				at='%s.shadowRadius'%(self.shape))
 		if maya.cmds.attributeQuery('lightRadius',node=self.shape,exists=True) and self.lampType != 'directionalLight':
-			v = self.attr('lightRadius')
-			maxR = max(8.0,v)
-			self.lightRad = maya.cmds.floatSliderGrp(p=self.panel,label='Light Radius',field=True,value=v,max=maxR,cw=[1,120],cc=self.lightRadHandler,dc=self.lightRadHandler,annotation='effective size of the lamp')
+			maxR = max(8.0,self.attr('lightRadius'))
+			self.lightRad = maya.cmds.attrFieldSliderGrp(p=self.panel,label='Light Radius',max=maxR,hmb=True,cw=[1,120],
+				at='%s.lightRadius'%(self.shape),annotation='effective size of the lamp')
 		if maya.cmds.attributeQuery('lightAngle',node=self.shape,exists=True):
-			v = self.attr('lightAngle')
-			maxA = max(20.0,v)
-			self.lightAng = maya.cmds.floatSliderGrp(p=self.panel,label='Light Angle',field=True,value=v,max=maxA,cw=[1,120],cc=self.lightAngHandler,dc=self.lightAngHandler,annotation='spread angle for shadow rays')
+			maxA = max(20.0,self.attr('lightAngle'))
+			self.lightAng = maya.cmds.attrFieldSliderGrp(p=self.panel,label='Light Angle',max=maxA,hmb=True,cw=[1,120],
+				at='%s.lightAngle'%(self.shape),annotation='spread angle for shadow rays')
 		if maya.cmds.attributeQuery('ambientShade',node=self.shape,exists=True):
-			v = self.attr('ambientShade')
-			self.ambShade = maya.cmds.floatSliderGrp(p=self.panel,label='Ambient Shade',field=True,value=v,max=1.0,cw=[1,120],cc=self.ambShadeHandler,dc=self.ambShadeHandler,annotation='angular falloff of ambient tone')
+			self.ambShade = maya.cmds.attrFieldSliderGrp(p=self.panel,label='Ambient Shade',max=1.0,hmb=True,cw=[1,120],
+				at='%s.ambientShade'%(self.shape),annotation='angular falloff of ambient tone')
 		if self.shadow:
 			rays = maya.cmds.rowLayout('rays',p=self.panel,nc=3,adjustableColumn=2)
-			self.shadRays = maya.cmds.intFieldGrp(p=rays,label="Shadow Rays",cw=[1,80],v1=self.attr('shadowRays'),annotation='shadow ray count')
-			self.depthLimit = maya.cmds.intFieldGrp(p=rays,label="Ray Depth Limit",cw=[1,80],v1=self.attr('rayDepth'),annotation='max ray depth for shadows')
+			self.shadRays = maya.cmds.intFieldGrp(p=rays,label="Shadow Rays",cw=[1,80],
+				v1=self.attr('shadowRays'),annotation='shadow ray count')
+			self.depthLimit = maya.cmds.intFieldGrp(p=rays,label="Ray Depth Limit",cw=[1,80],
+				v1=self.attr('rayDepth'),annotation='max ray depth for shadows')
+		if self.lampType == 'spotLight':
+			srow = maya.cmds.rowLayout('srow',p=self.panel,nc=3)
+			self.cone = maya.cmds.attrFieldSliderGrp(p=srow,label='Cone',max=180.0,hmb=True,cw3=[30,40,50],
+				at='%s.coneAngle'%(self.shape),pre=2,annotation='cone angle')
+			self.penumbra = maya.cmds.attrFieldSliderGrp(p=srow,label='Penumbra',min=-10,max=10.0,hmb=True,cw3=[48,40,50],
+				at='%s.penumbraAngle'%(self.shape),pre=2,annotation='pensumbrar spread angle')
+			self.dropoff = maya.cmds.attrFieldSliderGrp(p=srow,label='Drop',max=255.0,hmb=True,cw3=[24,40,50],
+				at='%s.dropoff'%(self.shape),pre=2,annotation='dropoff against the center of the spotlight')
 		self.set_abilities()
 
 
@@ -388,6 +373,8 @@ class ShadowPanelUI(CVToolUtil):
 		self.dimmer = None # UI
 		self.metered = None # UI
 		self.meterPick = None
+		self.meterState = False
+		self.meterObject = None # a Dag object
 		self.lamps = self.build_lamp_list()
 
 	def build_lamp_list(self):
@@ -418,14 +405,78 @@ class ShadowPanelUI(CVToolUtil):
 		if not par:
 			par = self.vertLyt
 		botCol = maya.cmds.rowLayout(nc=3,parent=par,ct2=['left','right'],co2=[4,4],adjustableColumn=2)
-		CVTButton(Parent=botCol,Label='Help',Col=[.4,.4,.3],Cmd=CVToolUtil.use.helpHandler,Anno='Get help from the Caustic website')
-		CVTButton(Parent=botCol,Label='Refresh',Col=[.3,.3,.4],Cmd=ShadowPanelUI.use.refreshHandler,Anno='Refresh this window')
-		CVTButton(Parent=botCol,Label='Close',Col=[.4,.3,.3],Cmd=CVToolUtil.use.closeHandler,Anno='Close this window')
+		CVTButton(Parent=botCol,Label='Help',Col=[.4,.4,.3],
+			Cmd=CVToolUtil.use.helpHandler,Anno='Get help from the Caustic website')
+		CVTButton(Parent=botCol,Label='Refresh',Col=[.3,.3,.4],
+			Cmd=ShadowPanelUI.use.refreshHandler,Anno='Refresh this window')
+		CVTButton(Parent=botCol,Label='Close',Col=[.4,.3,.3],
+			Cmd=CVToolUtil.use.closeHandler,Anno='Close this window')
 
 	def dimmerHandler(self, *args):
 		self.dimmerVal = maya.cmds.floatSliderGrp(self.dimmer,query=True,value=True)
 		for a in self.lamps:
 			a.update_intensity()
+
+	def meterHandler(self, *args):
+		"this is called BEFORE the CVTCheckBox Value is updated...."
+		r = ""
+		tt = 'Turn Meter On'
+		if self.meterState:
+			tt = 'Disable Metering'
+		r = maya.cmds.confirmDialog(title=tt,
+			message='As we switch metering state:\nPreserve the current Appearance,\nor the Number values shown?',
+			button=['Help','Appearance','Numbers','Cancel'],
+			defaultButton = 'Appearance',
+			cancelButton='Cancel',
+			dismissString='Cancel')
+		if r == 'Cancel':
+				return
+		if r == 'Help':
+			self.helpHandler(args)
+			return
+		self.metered.defaultHandler() # now the value is updated....
+		self.meterState = self.metered.value # kep separate from UI in case window is refreshed
+		if self.metered.value:
+			for a in self.lamps:
+				a.turn_on_meter(PreserveMaya=(r=='Numbers'))
+		else:
+			for a in self.lamps:
+				a.turn_off_meter()
+		self.meterPick.enable(self.meterState)
+
+	def pickHandler(self, *args):
+		tt = maya.cmds.ls(sl=True,type='xform')
+		meterPt = None
+		if len(tt<1):
+			print "No objects selected"
+			r = maya.cmds.confirmDialog(title='Meter Create',
+				message='No object is selected.\nCreate a locator to use as a meter point?',
+				button=['Help','Yes','No','Cancel'],
+				defaultButton = 'Yes',
+				cancelButton='Cancel',
+				dismissString='Cancel')
+			if r == 'Cancel' or r == 'No':
+				return
+			if r == 'Help':
+				self.helpHandler(args) # TO-DO -- specific help
+				return
+			meterPt = maya.cmds.createNode('meterPoint',type='locator')
+		elif len(tt) > 1:
+			r = maya.cmds.confirmDialog(title='Meter Select',
+				message='Too many objects.\nUse "%s" as a meter point?'%(tt[0]),
+				button=['Help','Yes','No','Cancel'],
+				defaultButton = 'Yes',
+				cancelButton='Cancel',
+				dismissString='Cancel')
+			if r == 'Cancel' or r == 'No':
+				return
+			if r == 'Help':
+				self.helpHandler(args) # TO-DO -- specific help
+				return
+			meterPt = tt[0]
+		else:
+			meterPt = tt[0]
+		print "Someday we can use object '%s' as a light meter location. Please wait."%(meterPt)
 
 	def showUI(self):
 		if ShadowPanelUI.use and ShadowPanelUI.use.window:
@@ -440,11 +491,16 @@ class ShadowPanelUI(CVToolUtil):
 		self.startUI(DispTitle="Shadow Panel",WinTitle="Shadows",WinName="ShadowPanel")
 		tops = maya.cmds.rowLayout(nc=4,adjustableColumn=2,p=self.vertLyt)
 		self.dimmerVal = 1.0 # always reset when starting a new window
-		self.dimmer = maya.cmds.floatSliderGrp(p=tops,label='Dimmer',field=True,value=self.dimmerVal,min=0,max=2.0,cw3=[40,60,100],cc=self.dimmerHandler,dc=self.dimmerHandler,annotation='Controls brightness over all lamps')
-		maya.cmds.text(label=' ',p=tops)
-		self.metered = CVTCheckBox(Parent=tops,Width=50,Label='Meter',Anno='use metering?')
-		self.meterPick = CVTButton(Parent=tops,Width=30,Label='Pick',Col=[.2,.4,.3],Anno='set metering distance to selected object')
-		self.metered.enable(False)
+		self.dimmer = maya.cmds.floatSliderGrp(p=tops,label='Dimmer',field=True,
+			value=self.dimmerVal,min=0,max=2.0,cw3=[40,60,100],
+			cc=self.dimmerHandler,dc=self.dimmerHandler,annotation='Controls brightness over all lamps')
+		# maya.cmds.text(label=' ',p=tops)
+		maya.cmds.separator(p=tops,style='none')
+		self.metered = CVTCheckBox(Parent=tops,Width=80,Label='Meter',OffLabel='No Meter',Anno='use metering?',
+			Value=self.meterState,Cmd=self.meterHandler)
+		self.meterPick = CVTButton(Parent=tops,Width=50,Label='Pick',
+			Col=[.2,.4,.3],Anno='set metering distance to selected object',
+			Cmd=self.pickHandler)
 		self.meterPick.enable(False)
 		for a in self.lamps:
 			a.init_ui(Parent=self.vertLyt,Master=self)
@@ -482,5 +538,6 @@ The panel script will do the rest!
 
 def ShadowPanel():
 	ShadowPanelUI().showUI()
+
 
 # ########################### eof ###
