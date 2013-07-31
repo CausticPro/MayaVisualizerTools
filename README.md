@@ -10,10 +10,14 @@ The scripts here are public, open, and NOT part of the standard Visualizer relea
 Current Contents
 ----------------
 
-*	**Caustic Concierge** is a one-button scene-prep tool -- load or create any scene, and have the Concierge prep all the settings to ensure good out-of-the-box results with Caustic Visualizer: IBL
+*	**Caustic Concierge** (Python) is a one-button scene-prep tool -- load or create any scene, and have the Concierge prep all the settings to ensure good out-of-the-box results with Caustic Visualizer: IBL
 			settings, linear color workflow, proper shadow setups, etc. (Python)
 
 *	**CVSettingsManager** provides Maya _presets_ for the Caustic Visualizer viewport -- you can quickly jump between different setups depending on whether you want fast flipbooks, WYSIWYG matching to the 		Batch Renderer, etc. It also provides easy shortcuts for copyng values bwteen the two render contexts and shortcuts to the settings windows. (Python)
+
+*   **ShadowPanel** provides a single-dialog panel for managing all the shadows and key lighting properties in your scene. (Python)
+
+![Settings Manager Panel](http://farm8.staticflickr.com/7373/9194352959_bf2fff30d8_o.jpg "Settings Manager")
 
 *	**CausticVisualizer_IBL_Setup** makes sure that your mental ray stringOptions are up to date. _This functionality is also included in the Caustic Concierge._ The script here is exactly the
 		one mentioned in recent Caustic forums posts and in this tutorial video: https://vimeo.com/68349810 (Mel)
