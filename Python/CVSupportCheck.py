@@ -2,6 +2,7 @@
 Find node types in shading networks
 """
 
+import sys
 import maya
 import unittest
 
@@ -11,14 +12,14 @@ class SupportChecker(object):
 	# list of node types, and any known 'issues'
 	WhiteList = {
 		'animCurve':	None,
-		'animCurveTA':	SupportChecker.KNOWN_ISSUE,
-		'animCurveTL':	SupportChecker.KNOWN_ISSUE,
-		'animCurveTT':	SupportChecker.KNOWN_ISSUE,
-		'animCurveTU':	SupportChecker.KNOWN_ISSUE,
-		'animCurveUA':	SupportChecker.KNOWN_ISSUE,
-		'animCurveUL':	SupportChecker.KNOWN_ISSUE,
-		'animCurveUT':	SupportChecker.KNOWN_ISSUE,
-		'animCurveUU':	SupportChecker.KNOWN_ISSUE,
+		'animCurveTA':	KNOWN_ISSUE,
+		'animCurveTL':	KNOWN_ISSUE,
+		'animCurveTT':	KNOWN_ISSUE,
+		'animCurveTU':	KNOWN_ISSUE,
+		'animCurveUA':	KNOWN_ISSUE,
+		'animCurveUL':	KNOWN_ISSUE,
+		'animCurveUT':	KNOWN_ISSUE,
+		'animCurveUU':	KNOWN_ISSUE,
 		'anisotropic':	None,
 		'blendColors':	None,
 		'blendTwoAttr':	None,
@@ -44,7 +45,7 @@ class SupportChecker(object):
 		'envCube':	None,
 		'envSky':	None,
 		'envSphere':	None,
-		'expression':	SupportChecker.KNOWN_ISSUE,
+		'expression':	KNOWN_ISSUE,
 		'file':	None,
 		'fractal':	None,
 		'gammaCorrect':	None,
@@ -61,7 +62,7 @@ class SupportChecker(object):
 		'marble':	None,
 		'mentalrayLightProfile':	None,
 		'mentalrayTexture':	None,
-		'mesh':	SupportChecker.KNOWN_ISSUE,
+		'mesh':	KNOWN_ISSUE,
 		'mi_car_paint_phen':	None,
 		'mi_car_paint_phen_x':	None,
 		'mi_car_paint_phen_x_passes':	None,
@@ -123,7 +124,7 @@ class SupportChecker(object):
 		'stencil':	None,
 		'stucco':	None,
 		'surfaceShader':	None,
-		'transform':	SupportChecker.KNOWN_ISSUE,
+		'transform':	KNOWN_ISSUE,
 		'tripleShadingSwitch':	None,
 		'useBackground':	None,
 		'vectorProduct':	None,
@@ -153,22 +154,57 @@ class SupportChecker(object):
 			issue = SupportChecker.WhiteList.get(t,'Unknown Node Type')
 			if issue is not None:
 				self.issues[t] = issue
-	def report(self):
+
+	def actual_problems(self):
+		return [t for t in self.issues if self.issues[t] != SupportChecker.KNOWN_ISSUE]
+
+	def has_issues(self):
+		return len(self.issues) > 0
+
+	def probably_okay(self):
+		"if all we have are well-known non-killer issues"
+		probs = self.actual_problems()
+		if len(probs) > 0:
+			return False
+		return True
+
+	def _found_types(self):
 		print "Discovered these node types:"
 		for t in sorted(self.hsTypes.keys()):
 			print "%s: %d" % (t,len(self.hsTypes[t]))
-		if len(self.issues)>0:
-			print "%d node types with *potential* issues:" % (len(self.issues))
-			for t in self.issues:
+
+	def _report_on(self,IssueList,Desc="%d nodes with potential issues"):
+		if len(IssueList)>0:
+			print "%d node types with *potential* issues:" % (len(IssueList))
+			for t in IssueList:
 				print '\t%s (%d nodes):\t"%s"' % (t,len(self.hsTypes[t]),self.issues[t])
 				for n in sorted(self.hsTypes[t]):
 					print '\t\t\t%s' % (n)
+		else:
+			print "Scene hypergraph looks okay"
 
+	def _short_report_on(self,IssueList,Desc="%d nodes with potential issues"):
+		if len(IssueList)>0:
+			print "%d node types with *potential* issues:" % (len(IssueList))
+			for t in IssueList:
+				print '\t%s (%d nodes)\t"%s"' % (t,len(self.hsTypes[t]),self.issues[t])
+		else:
+			print "Scene hypergraph looks okay"
 
-def check():
+	def full_report(self):
+		self._found_types()
+		self._report_on(self.issues.keys())
+
+	def short_report(self):
+		self._short_report_on(self.actual_problems())
+
+def check(Full=False):
 	# basic call
 	SC = SupportChecker()
-	SC.report()
+	if Full:
+		SC.full_report()
+	else:
+		SC.short_report()
 
 
 class TestStuff(unittest.TestCase):
@@ -183,6 +219,9 @@ class TestStuff(unittest.TestCase):
 	def test_hasTypes(self):
 		"all maya scenes should at least one type"
 		self.assertTrue(len(self.Checker.hsTypes)>0)
+	def test_hasIssues(self):
+		""
+		self.assertTrue(len(self.Checker.hsTypes)>0)
 
 
 # #############################################################
@@ -191,6 +230,8 @@ if __name__ == "__main__":
 	try:
 		unittest.main()
 	except:
+		print sys.exc_info()
+		print "I love Maya"
 		pass
 
 
