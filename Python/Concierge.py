@@ -24,7 +24,9 @@ import sys
 import os
 import maya
 import re
+import unittest
 from  CVToolUtil import *
+import CVSupportCheck
 
 class Service(CVToolUtil):
   use = None    # we use this to let Qt know where to look for stuff
@@ -38,10 +40,12 @@ class Service(CVToolUtil):
     self.desc = {}       
     self.hasChanges = False
     self.iblUpdate = False
-
+    SC = CVSupportCheck.SupportChecker()
+    self.probNodes = SC.actual_problems()
+    
   def already_okay(self):
     "is the scene already okay?"
-    return not self.hasChanges
+    return (not self.hasChanges) and (len(self.probNodes) == 0)
 
   def cache(self,Name,Value,Desc="%d Other changes"):
     """
@@ -233,6 +237,11 @@ class Service(CVToolUtil):
         if ds.__contains__('%d'):
           ds = ds % (self.desc[d])
         dl.append(ds)
+      if len(self.probNodes) > 0:
+        dl.append('Potential Unaltered Hypershade Issues:')
+        for t in self.probNodes:
+          nt = len(maya.cmds.ls(typ=t))
+          dl.append('> %s, %d node%s: %s'%(t,nt,('s' if nt>1 else ''),CVSupportCheck.SupportChecker.hs_issue(t)))
     # start actual UI bits
     self.startUI(DispTitle=titleText,WinTitle="Caustic Concierge",WinName="Concierge")
     midsection = maya.cmds.columnLayout(p=self.vertLyt,co=['left',10],rs=3)
@@ -431,4 +440,27 @@ def Prep():
       print ds
   aList.showUI()
   return
+
+####
+
+class TestStuff(unittest.TestCase):
+  """
+  Unit-Test Class
+  """
+  def setUp(self):
+    self.svc = Service()
+  def test_hasNodes(self):
+    "see if we got that far"
+    self.assertTrue(len(self.svc.probNodes) is not None)
+
+# #############################################################
+
+if __name__ == "__main__":
+  try:
+    unittest.main()
+  except:
+    print sys.exc_info()
+    print "I love Maya"
+    pass
+
 

@@ -131,6 +131,11 @@ class SupportChecker(object):
 		'volumeNoise':	None,
 		'wood':	None
 	}
+
+	@staticmethod
+	def hs_issue(NodeType):
+		return SupportChecker.WhiteList.get(NodeType,'Unknown Node Type')
+
 	def __init__(self):
 		self.hsNodes = {}
 		self.hsTypes = {}
@@ -151,7 +156,7 @@ class SupportChecker(object):
 	def find_issues(self):
 		self.issues = {}
 		for t in self.hsTypes:
-			issue = SupportChecker.WhiteList.get(t,'Unknown Node Type')
+			issue = SupportChecker.hs_issue(t)
 			if issue is not None:
 				self.issues[t] = issue
 
