@@ -10,8 +10,7 @@ The scripts here are public, open, and NOT part of the standard Visualizer relea
 Current Contents
 ----------------
 
-*	**Caustic Concierge** (Python) is a one-button scene-prep tool -- load or create any scene, and have the Concierge prep all the settings to ensure good out-of-the-box results with Caustic Visualizer: IBL
-			settings, linear color workflow, proper shadow setups, etc. (Python)
+*	**Caustic Concierge** is a one-button scene-prep tool -- load or create any scene, and have the Concierge prep all the settings to ensure good out-of-the-box results with Caustic Visualizer: IBL settings, linear color workflow, proper shadow setups, etc. Concierge now also watches for Maya hypershade issues and provides guidance for translation. (Python)
 
 *	**CVSettingsManager** provides Maya _presets_ for the Caustic Visualizer viewport -- you can quickly jump between different setups depending on whether you want fast flipbooks, WYSIWYG matching to the 		Batch Renderer, etc. It also provides easy shortcuts for copyng values bwteen the two render contexts and shortcuts to the settings windows. (Python)
 
@@ -31,10 +30,10 @@ You can download & install these tools with or without a (free) GitHub account -
 with an account is easier!
 
 1. Clone the repo or download and unpack the ZIP file to your desired location
-1. Open the Maya file `open_me_to_install.ma` & then restart Maya -- Maya will do the rest for you
+2. Open the Maya file `open_me_to_install.ma` & then restart Maya -- Maya will do the rest for you
 
 Of course, if you like the Old School Ways, just copy the .mel and .py files to your existing Maya script locations. If you use the New Way, then anytime you pull updates into the same directory, they'll be available instantly in Maya, no further installation required.
 
 Enjoy, and please feel free to comment, share, and especially contribute here on GitHub.
 
-kb, 2 July 2013
+kb, 5 Sept 2013
