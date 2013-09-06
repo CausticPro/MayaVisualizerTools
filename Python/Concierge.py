@@ -426,7 +426,7 @@ def Prep():
         return
     except:
       print "Sorry, cannot load Caustic Visualizer!!"
-      aList.showHelpWindow(Message="Sorry, Caustic Visulaizer cannot be Loaded",DispTitle='Caustic Concierge Halt',WinTitle="Concierge Fail")
+      aList.showHelpWindow(Message="Sorry, Caustic Visualizer cannot be Loaded",DispTitle='Caustic Concierge Halt',WinTitle="Concierge Fail")
       return
   needed_node("CausticVisualizerBatchSettings")
   needed_node("CausticVisualizerSettings")
@@ -456,11 +456,4 @@ class TestStuff(unittest.TestCase):
 # #############################################################
 
 if __name__ == "__main__":
-  try:
-    unittest.main()
-  except:
-    print sys.exc_info()
-    print "I love Maya"
-    pass
-
-
+  unittest.main(exit=False)

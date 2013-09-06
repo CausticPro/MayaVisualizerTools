@@ -33,12 +33,13 @@ class SupportChecker(object):
 		'clamp':	None,
 		'cloud':	None,
 		'condition':	None,
+		'contrast':	None,
 		'crater':	None,
 		'dgs_material':	None,
 		'dielectric_material':	None,
 		'displayLayer':	None,
 		'displayLayerManager':	None,
-		'distanceBetwen':	None,
+		'distanceBetween':	None,
 		'doubleShadingSwitch':	None,
 		'envBall':	None,
 		'envChrome':	None,
@@ -62,10 +63,14 @@ class SupportChecker(object):
 		'marble':	None,
 		'mentalrayLightProfile':	None,
 		'mentalrayTexture':	None,
+		'mentalrayVertexColors':	None,
 		'mesh':	KNOWN_ISSUE,
+		'mi_bump_flakes':	None,
+		'mi_car_paint':	None,
 		'mi_car_paint_phen':	None,
 		'mi_car_paint_phen_x':	None,
 		'mi_car_paint_phen_x_passes':	None,
+		'mi_metallic_paint':	None,
 		'mi_metallic_paint_x':	'no flakes',
 		'mi_metallic_paint_x_passes':	None,
 		'mia_exposure_photographic':	None,
@@ -77,23 +82,33 @@ class SupportChecker(object):
 		'mia_photometric_light':	None,
 		'mib_amb_occlusion':	None,
 		'mib_color_mix':	None,
+		'mib_continue':	None,
 		'mib_dielectric':	None,
 		'mib_illum_blinn':	None,
 		'mib_illum_cooktorr':	None,
+		'mib_illum_lambert':	None,
 		'mib_illum_phong':	None,
 		'mib_illum_ward':	None,
+		'mib_illum_ward_deriv':	None,
+		'mib_lookup_spherical':	None,
 		'mib_opacity':	None,
+		'mib_transparency':	None,
 		'mib_twosided':	None,
 		'mip_cameramap':	None,
+		'mip_card_opacity':	None,
+		'mip_gamma_gain':	None,
 		'mip_grayball':	None,
 		'mip_matteshadow':	None,
 		'mip_mirrorball':	None,
 		'mip_rayswitch':	None,
 		'mip_rayswitch_advanced':	None,
+		'misss_fast_shader':	None,
 		'misss_fast_simple_maya':	None,
 		'misss_fast_skin_maya':	None,
+		'misss_lambert_gamma':	None,
 		'misss_set_normal':	None,
 		'misss_skin_specular':	None,
+		'mountain':			'Alpha version',
 		'multiplyDivide':	None,
 		'mute':	None,
 		'noise':	None,
@@ -232,12 +247,6 @@ class TestStuff(unittest.TestCase):
 # #############################################################
 
 if __name__ == "__main__":
-	try:
-		unittest.main()
-	except:
-		print sys.exc_info()
-		print "I love Maya"
-		pass
-
+	unittest.main(exit=False)
 
 # ################### eof ###
