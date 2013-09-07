@@ -29,6 +29,7 @@ import os
 import maya
 import re
 from  CVToolUtil import *
+import unittest
 
 class CVSettingsManager(CVToolUtil):
 
@@ -417,5 +418,25 @@ viewport rendering presets."""
 		self.helpCloseFooter()
 		maya.cmds.showWindow(self.window)
 
+def Manage():
+	cvs = CVSettingsManager()
+	cvs.showUI()
+
+# ###################################
+
+class TestSMgr(unittest.TestCase):
+  """
+  Unit-Test Class
+  """
+  def setUp(self):
+    self.mgr = CVSettingsManager()
+  def test_hasNodes(self):
+    "see if we got that far"
+    self.assertTrue(len(self.mgr.prList) is not None) # why?
+
+# #############################################################
+
+if __name__ == "__main__":
+  unittest.main(exit=False)
 
 # ########################### eof ###
