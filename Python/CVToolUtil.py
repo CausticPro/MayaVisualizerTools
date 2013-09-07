@@ -19,6 +19,7 @@ import os
 import maya.cmds
 import maya.mel
 import re
+import unittest
 # import unittest2
 
 class CVTButton(object):
@@ -233,5 +234,21 @@ class CVToolUtil(object):
 	def force_batch_settings_node(self):
 		return self.force_cv_node('CausticVisualizerBatchSettings')
 
+# ###################################
+
+class TestTools(unittest.TestCase):
+  """
+  Unit-Test Class
+  """
+  def setUp(self):
+    self.tool = CVToolUtil()
+  def test_hasVers(self):
+    "see if we got that far"
+    self.assertTrue(self.tool.appVersion is not None) 
+
+# #############################################################
+
+if __name__ == "__main__":
+	unittest.main(exit=False)
 
 # ########################### eof ###
