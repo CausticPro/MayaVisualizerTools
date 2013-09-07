@@ -28,6 +28,7 @@ ShadowPanel()
 
 import sys, os , re, math
 import maya
+import unittest
 from  CVToolUtil import *
 
 class DecayButton(CVTButton):
@@ -537,7 +538,24 @@ The panel script will do the rest!
 		self.showHelpWindow(Message=helpText,DispTitle='Shadow Panel Help',WinTitle="Shadow Panel Help")
 
 def ShadowPanel():
-	ShadowPanelUI().showUI()
+	sp = ShadowPanelUI()
+	sp.showUI()
 
+# #############################################
+
+class TestShadPanel(unittest.TestCase):
+  """
+  Unit-Test Class
+  """
+  def setUp(self):
+    self.panel = ShadowPanelUI()
+  def test_hasVers(self):
+    "see if we got that far"
+    self.assertTrue(self.panel.appVersion is not None) 
+
+# #############################################################
+
+if __name__ == "__main__":
+	unittest.main(exit=False)
 
 # ########################### eof ###
