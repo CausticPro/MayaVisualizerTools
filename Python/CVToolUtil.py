@@ -266,6 +266,9 @@ class TestTools(unittest.TestCase):
   def test_hasVers(self):
     "see if we got that far"
     self.assertTrue(self.tool.appVersion is not None) 
+  def test_hasHelp(self):
+    "see if we got that far"
+    self.assertTrue(self.tool.helpURL is not None) 
 
 # #############################################################
 
