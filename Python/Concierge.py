@@ -204,9 +204,15 @@ class Service(CVToolUtil):
     use8Bit = is_8_bit()
     # set clipped filtering on
     self.cache("CausticVisualizerBatchSettings.clipFinalShadedColor",use8Bit,"Image range clipping adjusted")
-    # make sure adaptive is on
-    self.cache("CausticVisualizerBatchSettings.multiPassAdaptive",True,"Adaptive Sampling Enabled")
-    self.cache("CausticVisualizerSettings.multiPassAdaptive",True,"Adaptive Sampling Enabled")
+    # make sure adaptive is on, unless motion blur is active
+    Adapt = True
+    try:
+      Adapt = not maya.cmds.getAttr('CausticVisualizerBatchSettings.motionBlur')
+    except:
+      # not all versions have that attribute
+      pass
+    self.cache("CausticVisualizerBatchSettings.multiPassAdaptive",Adapt,"Adaptive Sampling %s"%(Adapt))
+    self.cache("CausticVisualizerSettings.multiPassAdaptive",Adapt,"Adaptive Sampling %s"%(Adapt))
     # set up linear sRGB color workflow
     msg = "8-bit Color Profile Tuned" if use8Bit else "Floating-Point Color Profile Tuned"
     self.cache("defaultRenderGlobals.colorProfileEnabled",True,msg)
@@ -448,6 +454,7 @@ class TestStuff(unittest.TestCase):
   Unit-Test Class
   """
   def setUp(self):
+    print dir(maya.cmds)
     self.svc = Service()
   def test_hasNodes(self):
     "see if we got that far"
@@ -456,4 +463,7 @@ class TestStuff(unittest.TestCase):
 # #############################################################
 
 if __name__ == "__main__":
+  print "Running Concierge Unit Tests"
   unittest.main(exit=False)
+
+################# eof ##

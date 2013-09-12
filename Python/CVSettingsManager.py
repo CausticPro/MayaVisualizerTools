@@ -437,6 +437,7 @@ class TestSMgr(unittest.TestCase):
 # #############################################################
 
 if __name__ == "__main__":
+  print "Running CVSettingsManager Unit Tests"
   unittest.main(exit=False)
 
 # ########################### eof ###
