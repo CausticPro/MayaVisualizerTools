@@ -30,6 +30,12 @@ import maya
 import re
 from  CVToolUtil import *
 import unittest
+# this little trick enables us to run unittests in mayapy.exe..
+try:
+  import maya.standalone
+  maya.standalone.initialize()
+except:
+  pass
 
 class CVSettingsManager(CVToolUtil):
 
@@ -432,12 +438,12 @@ class TestSMgr(unittest.TestCase):
     self.mgr = CVSettingsManager()
   def test_hasNodes(self):
     "see if we got that far"
-    self.assertTrue(len(self.mgr.prList) is not None) # why?
+    self.assertTrue(self.mgr.prList is  None) # default empty state
 
 # #############################################################
 
 if __name__ == "__main__":
   print "Running CVSettingsManager Unit Tests"
-  unittest.main(exit=False)
+  unittest.main()
 
 # ########################### eof ###
