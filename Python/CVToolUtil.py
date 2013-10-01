@@ -20,6 +20,12 @@ import maya.cmds
 import maya.mel
 import re
 import unittest
+# this little trick enables us to run unittests in mayapy.exe..
+try:
+  import maya.standalone
+  maya.standalone.initialize()
+except:
+  pass
 
 def _safely_seek_appVersion():
 	"when running mayapy mel.eval() is not defined"
@@ -264,6 +270,6 @@ class TestTools(unittest.TestCase):
 
 if __name__ == "__main__":
 	print "Running CVToolUtil Unit Tests"
-	unittest.main(exit=False)
+	unittest.main()
 
 # ########################### eof ###
