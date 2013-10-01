@@ -20,6 +20,21 @@ import maya.cmds
 import maya.mel
 import re
 import unittest
+# this little trick enables us to run unittests in mayapy.exe..
+try:
+  import maya.standalone
+  maya.standalone.initialize()
+except:
+  pass
+
+def _safely_seek_appVersion():
+	"when running mayapy mel.eval() is not defined"
+	v = 2014.0
+	try:
+		v = maya.mel.eval('getApplicationVersionAsFloat();')
+	except:
+		pass
+	return v
 
 class CVTButton(object):
 	"""
@@ -35,7 +50,7 @@ class CVTButton(object):
 			cmd = self.defaultHandler
 		self.btn = None
 		if CVTButton.appVersion is None:
-			CVTButton.appVersion = maya.mel.eval('getApplicationVersionAsFloat();')
+			CVTButton.appVersion = _safely_seek_appVersion()
 		if CVTButton.appVersion > 2013:
 			self.btn = maya.cmds.iconTextButton(p=Parent,label=Label,st='textOnly',flat=True,bgc=Col,width=Width,height=Height,command=cmd,annotation=Anno,font=Font)
 		else:
@@ -100,7 +115,7 @@ class CVToolUtil(object):
 		self.helpWindow = None
 		self.vertLyt = None
 		self.statusText = None
-		self.appVersion = maya.mel.eval('getApplicationVersionAsFloat();')
+		self.appVersion = _safely_seek_appVersion()
 		CVToolUtil.use = self
 		self.helpURL = HelpURL
 		if not CVToolUtil.logoFile:
@@ -250,7 +265,11 @@ class TestTools(unittest.TestCase):
 
 # #############################################################
 
+# launched from maya as:
+#  maya -command "python(\"execfile('Concierge.py')\")"
+
 if __name__ == "__main__":
-	unittest.main(exit=False)
+	print "Running CVToolUtil Unit Tests"
+	unittest.main()
 
 # ########################### eof ###

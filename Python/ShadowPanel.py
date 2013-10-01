@@ -29,6 +29,12 @@ ShadowPanel()
 import sys, os , re, math
 import maya
 import unittest
+# this little trick enables us to run unittests in mayapy.exe..
+try:
+  import maya.standalone
+  maya.standalone.initialize()
+except:
+  pass
 from  CVToolUtil import *
 
 class DecayButton(CVTButton):
@@ -553,9 +559,7 @@ class TestShadPanel(unittest.TestCase):
     "see if we got that far"
     self.assertTrue(self.panel.appVersion is not None) 
 
-# #############################################################
-
 if __name__ == "__main__":
-	unittest.main(exit=False)
+	unittest.main()
 
 # ########################### eof ###

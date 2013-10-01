@@ -25,6 +25,12 @@ import os
 import maya
 import re
 import unittest
+# this little trick enables us to run unittests in mayapy.exe..
+try:
+  import maya.standalone
+  maya.standalone.initialize()
+except:
+  pass
 from  CVToolUtil import *
 import CVSupportCheck
 
@@ -141,73 +147,77 @@ class Service(CVToolUtil):
       except:
         print '\tUnable to check texture format for "%f"'
 
-  def calculate_needs(self):
-    """
-    build a list of needed changes
-    """
-    neverTraced = self.cache("defaultRenderQuality.enableRaytracing",1,"Raytracing enabled")
-    mrAvailable = expected_plugin("Mayatomr")
-    hasUsedMental = is_mental() or smells_mental()
-    # turn on shadows?
+  def enable_shadows(self):
+    "turn on raytraced shadows for all lights that might need them"
     for L in maya.cmds.ls(lights=True):
       self.cache((L+".useRayTraceShadows"),True,"Shadows enabled for %d lights")
-    # update mental IBL to "native"
-    self.iblUpdate = update_string_options() # this part is NOT in the undo stack... harmless
-    if self.iblUpdate:
-      self.hasChanges = True
-      self.desc["mentalray IBL native mode enabled"] = 1
-    if neverTraced:
-      # reduce reflectivity
-      for M in maya.cmds.ls(materials=True):
-        try:
-          if maya.cmds.attributeQuery('reflectivity',node=M,exists=True):
-            reflAttr = M+".reflectivity"
-            try:
-              if maya.cmds.getAttr(reflAttr) == 0.5: # the untraced default: let's drop it to zero
-                self.cache(reflAttr,0.0,"Reflectivity tuned for %d materials")
-            except:
-              print "issue with node %s"%(M)
-        except:
-          print "issue with material %s reflectivity"%(M)
-    if hasUsedMental:
-      # make sure area lights use the right shape
-      for L in maya.cmds.ls(type="areaLight"): # only if mental is active? TO-DO: find out
-        self.cache(L+".areaLight",True,"%d Area lights tuned")
-        self.cache(L+".useRayTraceShadows",True,"Area light shadow attrs adjusted")
-        try:
-          if maya.cmds.getAttr(L+".shadowRays") == 1:
-            self.cache(L+".shadowRays",8,"Area light shadow rays increased") # chosen after CO chat
-        except:
-          print "issue with light %s"%(L)
-      if maya.cmds.getAttr("miDefaultOptions.finalGather"):
-        # final gather vs diffuse
-        try:
-          fgRays = maya.cmds.getAttr("miDefaultOptions.finalGatherRays")
-          if fgRays > 24:   # TO-DO -- what value REALLY????
-            fgRays = int(fgRays/50)
-            fgRays = min(fgRays,1)
-          self.cache("miDefaultOptions.finalGatherRays",fgRays,"GI Rays adjusted") # ??????
-        except:
-          print "issue with miDefaultOptions"
-        try:
-          self.cache("CausticVisualizerBatchSettings.giMaxPrimaryRays",fgRays,"GI Rays adjusted")
-          self.cache("CausticVisualizerSettings.giMaxPrimaryRays",fgRays,"GI Rays adjusted")
-          cvPasses = maya.cmds.getAttr("CausticVisualizerBatchSettings.multiPassPasses")
-          if cvPasses < 24:
-            self.cache("CausticVisualizerBatchSettings.multiPassPasses",24,"Pass Count Improved")
-          cvPasses = maya.cmds.getAttr("CausticVisualizerSettings.multiPassPasses")
-          if cvPasses < 24:
-            self.cache("CausticVisualizerSettings.multiPassPasses",24,"Pass Count Improved")
-        except:
-          print "issue with CV nodes"
+
+  def reflection_reduction(self,DefaultReflectivity=0.0):
+    """Reduces the default reflectivity from 0.5 to DefaultReflectivity.
+    Normally not used if the scene has been raytraced before."""
+    for M in maya.cmds.ls(materials=True):
+      try:
+        if maya.cmds.attributeQuery('reflectivity',node=M,exists=True):
+          reflAttr = M+".reflectivity"
+          try:
+            if maya.cmds.getAttr(reflAttr) == 0.5: # the untraced default: let's drop it to zero
+              self.cache(reflAttr,DefaultReflectivity,"Reflectivity tuned for %d materials")
+          except:
+            print "issue with node %s"%(M)
+      except:
+        print "issue with material %s reflectivity"%(M)
+
+  def correct_area_light_shapes(self):
+    # make sure area lights use the right shape
+    for L in maya.cmds.ls(type="areaLight"): # only if mental is active? TO-DO: find out
+      self.cache(L+".areaLight",True,"%d Area lights tuned")
+      self.cache(L+".useRayTraceShadows",True,"Area light shadow attrs adjusted")
+      try:
+        if maya.cmds.getAttr(L+".shadowRays") == 1:
+          self.cache(L+".shadowRays",8,"Area light shadow rays increased") # chosen after CO chat
+      except:
+        print "issue with light %s"%(L)
+
+  def adjust_final_gather_rays(self):
+    if not maya.cmds.getAttr("miDefaultOptions.finalGather"):
+      return
+    # final gather vs diffuse
+    try:
+      fgRays = maya.cmds.getAttr("miDefaultOptions.finalGatherRays")
+      if fgRays > 24:   # TO-DO -- what value REALLY????
+        fgRays = int(fgRays/50)
+        fgRays = min(fgRays,1)
+      self.cache("miDefaultOptions.finalGatherRays",fgRays,"GI Rays adjusted") # ??????
+    except:
+      print "issue with miDefaultOptions"
+    try:
+      self.cache("CausticVisualizerBatchSettings.giMaxPrimaryRays",fgRays,"GI Rays adjusted")
+      self.cache("CausticVisualizerSettings.giMaxPrimaryRays",fgRays,"GI Rays adjusted")
+      cvPasses = maya.cmds.getAttr("CausticVisualizerBatchSettings.multiPassPasses")
+      if cvPasses < 24:
+        self.cache("CausticVisualizerBatchSettings.multiPassPasses",24,"Pass Count Improved")
+      cvPasses = maya.cmds.getAttr("CausticVisualizerSettings.multiPassPasses")
+      if cvPasses < 24:
+        self.cache("CausticVisualizerSettings.multiPassPasses",24,"Pass Count Improved")
+    except:
+      print "issue with CV nodes"
+
+  def adaptive_sampling(self):
+    "Turn on adaptive sampling UNLESS motion blur is active"
+    Adapt = True
+    try:
+      Adapt = not maya.cmds.getAttr('CausticVisualizerBatchSettings.motionBlur')
+    except:
+      # not all versions have that attribute
+      pass
+    self.cache("CausticVisualizerBatchSettings.multiPassAdaptive",Adapt,"Adaptive Sampling %s"%(Adapt))
+    self.cache("CausticVisualizerSettings.multiPassAdaptive",Adapt,"Adaptive Sampling %s"%(Adapt))
+
+  def linear_light_workflow(self):
     # color setup is based on expected output format
     use8Bit = is_8_bit()
     # set clipped filtering on
     self.cache("CausticVisualizerBatchSettings.clipFinalShadedColor",use8Bit,"Image range clipping adjusted")
-    # make sure adaptive is on
-    self.cache("CausticVisualizerBatchSettings.multiPassAdaptive",True,"Adaptive Sampling Enabled")
-    self.cache("CausticVisualizerSettings.multiPassAdaptive",True,"Adaptive Sampling Enabled")
-    # set up linear sRGB color workflow
     msg = "8-bit Color Profile Tuned" if use8Bit else "Floating-Point Color Profile Tuned"
     self.cache("defaultRenderGlobals.colorProfileEnabled",True,msg)
     self.cache("defaultRenderGlobals.inputColorProfile",3,msg)
@@ -218,9 +228,29 @@ class Service(CVToolUtil):
     self.cache("defaultViewColorManager.exposure",0.0,msg)
     self.cache("defaultViewColorManager.contrast",0.0,msg)
     self.problem_texture_finder()
-    ## 
-    # how to handle Enable Diffuse and Enable Caustic?
-    # camera settings - depth of field enabled?
+
+  def calculate_needs(self):
+    """
+    build a list of needed changes
+    Not currently managed:
+      Enable DIffuse/Enable Caustics
+      Camera Settings: Depth of Field and Motion Blur
+    """
+    neverTraced = self.cache("defaultRenderQuality.enableRaytracing",1,"Raytracing enabled")
+    mrAvailable = expected_plugin("Mayatomr")
+    hasUsedMental = is_mental() or smells_mental()
+    self.enable_shadows()
+    self.iblUpdate = update_string_options() # this part is NOT in the undo stack... harmless
+    if self.iblUpdate:
+      self.hasChanges = True
+      self.desc["mentalray IBL native mode enabled"] = 1
+    if neverTraced:
+      self.reflection_reduction()
+    if hasUsedMental:
+      self.correct_area_light_shapes()
+      self.adjust_final_gather_rays()
+    self.adaptive_sampling()
+    self.linear_light_workflow()
 
   def showUI(self):
     dl = []
@@ -350,7 +380,7 @@ def cv_assign_mr_stringopt(Name,Type,Value):
   return False
 
 def update_string_options():
-  "mental ray string options -- return True if anything changed"
+  "mental ray string options -- update mental IBL to 'native' -- return True if anything changed"
   changes = False
   prevSel = maya.cmds.ls(selection=True)
   # print ("Optimizing MentalRay IBL Options for Caustic Visualizer Use:\n")
@@ -441,19 +471,27 @@ def Prep():
   aList.showUI()
   return
 
-####
+#### UNIT TESTING #################
 
 class TestStuff(unittest.TestCase):
   """
   Unit-Test Class
   """
   def setUp(self):
-    self.svc = Service()
+    pass
   def test_hasNodes(self):
+    svc = Service()
     "see if we got that far"
-    self.assertTrue(len(self.svc.probNodes) is not None)
-
-# #############################################################
+    self.assertTrue(len(svc.probNodes) is not None)
+  def test_createBatchNode(self):
+    "prints warnings, but completes when testing"
+    self.assertTrue(needed_node("CausticVisualizerBatchSettings"))
+  def test_smell(self):
+    "scene is empty"
+    self.assertFalse(smells_mental())
 
 if __name__ == "__main__":
-  unittest.main(exit=False)
+  print "Running Concierge Unit Tests"
+  unittest.main()
+
+################# eof ##

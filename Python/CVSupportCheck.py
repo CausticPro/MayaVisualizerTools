@@ -5,6 +5,12 @@ Find node types in shading networks
 import sys
 import maya
 import unittest
+# this little trick enables us to run unittests in mayapy.exe..
+try:
+  import maya.standalone
+  maya.standalone.initialize()
+except:
+  pass
 
 class SupportChecker(object):
 	# static whitelist for now
@@ -226,8 +232,9 @@ def check(Full=False):
 	else:
 		SC.short_report()
 
+# ###################################
 
-class TestStuff(unittest.TestCase):
+class TestSupCheck(unittest.TestCase):
 	"""
 	Unit-Test Class
 	"""
@@ -242,9 +249,6 @@ class TestStuff(unittest.TestCase):
 	def test_hasIssues(self):
 		""
 		self.assertTrue(len(self.Checker.hsTypes)>0)
-
-
-# #############################################################
 
 if __name__ == "__main__":
 	unittest.main(exit=False)
