@@ -374,7 +374,7 @@ viewport rendering presets."""
 		maya.cmds.textScrollList(self.prList,edit=True,append=presetList)
 
 	def showUI(self):
-		self.startUI(DispTitle="Render Settings Manager",WinTitle="Render Settings Mgr",WinName="SetMgr")
+		self.startUI(DispTitle="Render Settings Manager",WinTitle="Render Settings Mgr",WinName="SetMgr",LogAction="Settings Mgr")
 		#
 		prFrame = maya.cmds.frameLayout('pre',label='Caustic Visualizer Viewport Presets',parent=self.vertLyt)
 		prCol = maya.cmds.rowLayout(parent=prFrame,nc=3,ct2=['left','right'],co2=[4,4],adjustableColumn=2)

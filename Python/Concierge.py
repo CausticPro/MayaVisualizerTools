@@ -273,7 +273,7 @@ class Service(CVToolUtil):
           nt = len(maya.cmds.ls(typ=t))
           dl.append('> %s, %d node%s: %s'%(t,nt,('s' if nt>1 else ''),CVSupportCheck.SupportChecker.hs_issue(t)))
     # start actual UI bits
-    self.startUI(DispTitle=titleText,WinTitle="Visualizer Concierge",WinName="Concierge")
+    self.startUI(DispTitle=titleText,WinTitle="Visualizer Concierge",WinName="Concierge",LogAction='Concierge')
     midsection = maya.cmds.columnLayout(p=self.vertLyt,co=['left',10],rs=3)
     for d in dl:
       maya.cmds.text(p=midsection,label=d)
