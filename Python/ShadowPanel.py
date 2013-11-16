@@ -495,7 +495,7 @@ class ShadowPanelUI(CVToolUtil):
 			except:
 				print "no old window"
 		maya.cmds.setAttr('defaultRenderQuality.enableRaytracing',1)
-		self.startUI(DispTitle="Shadow Panel",WinTitle="Shadows",WinName="ShadowPanel",LogAction="Shadow Panel")
+		self.startUI(DispTitle="Shadow Panel",WinTitle="Shadows",WinName="ShadowPanel",ToolCat="ShadowPanel")
 		tops = maya.cmds.rowLayout(nc=4,adjustableColumn=2,p=self.vertLyt)
 		self.dimmerVal = 1.0 # always reset when starting a new window
 		self.dimmer = maya.cmds.floatSliderGrp(p=tops,label='Dimmer',field=True,
@@ -541,7 +541,7 @@ the "Pick" button to say:
 "Set the right intensities for THIS object."
 The panel script will do the rest!
 """
-		self.showHelpWindow(Message=helpText,DispTitle='Shadow Panel Help',WinTitle="Shadow Panel Help")
+		self.showHelpWindow(Message=helpText,DispTitle='Shadow Panel Help',WinTitle="Shadow Panel Help",ToolCat='ShadowPanel')
 
 def ShadowPanel():
 	sp = ShadowPanelUI()
