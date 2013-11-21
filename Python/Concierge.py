@@ -1,7 +1,7 @@
 """
 Visualizer Quick Setup - handles all the trivial housekeeping for you when
   importing or creating a new Maya scene. Just load your scene and ask the
-  Caustic Concierge to Prep() it!
+  Visualizer Concierge to Prep() it!
 
 Try this in a shelf button:
 
@@ -273,7 +273,7 @@ class Service(CVToolUtil):
           nt = len(maya.cmds.ls(typ=t))
           dl.append('> %s, %d node%s: %s'%(t,nt,('s' if nt>1 else ''),CVSupportCheck.SupportChecker.hs_issue(t)))
     # start actual UI bits
-    self.startUI(DispTitle=titleText,WinTitle="Caustic Concierge",WinName="Concierge")
+    self.startUI(DispTitle=titleText,WinTitle="Visualizer Concierge",WinName="Concierge",ToolCat='Concierge')
     midsection = maya.cmds.columnLayout(p=self.vertLyt,co=['left',10],rs=3)
     for d in dl:
       maya.cmds.text(p=midsection,label=d)
@@ -301,10 +301,12 @@ class Service(CVToolUtil):
   def okHandler(self, *args):
     if not self.already_okay():
       print "Happy to be of service!"
+      safely_log_event('Concierge','Update',Value=len(self.names))
     maya.cmds.deleteUI(self.window)
     self.window = None
   def diyHandler(self, *args):
     print "# Reverting these changes: ######"
+    safely_log_event('Concierge','Revert',Value=len(self.names))
     self.undo_all()
     self.log_all()
     if self.iblUpdate:
@@ -315,7 +317,7 @@ class Service(CVToolUtil):
 
   def helpHandler(self, *args):
     helpText = """The concierge will do its best to prep your scene
-for use with the Caustic Visualizer. It checks and properly
+for use with the Visualizer for Maya. It checks and properly
 sets-up common issues such as shadowing, ray-trace enabling, etc.
 Everything the Concierge has done (if anything!) is listed
 right in the Concierge window.
@@ -324,7 +326,7 @@ If you choose not to approve these actions, Concierge will revert
 all Maya settings, and will also write to the Maya Script Editor
 window a complete listing of what it *would* have altered --
 you can copy and paste these commands selectively yourself."""
-    self.showHelpWindow(Message=helpText,DispTitle='Caustic Concierge Help',WinTitle="Concierge Help")
+    self.showHelpWindow(Message=helpText,DispTitle='Visualizer Concierge Help',WinTitle="Concierge Help",ToolCat='Concierge')
 
 
 ######### FIND AND FIX MAYA STUFF ###################################################
@@ -455,8 +457,8 @@ def Prep():
         maya.cmds.warning('Unable to load the Visualizer plugin!\nCheck your installation.\n')
         return
     except:
-      print "Sorry, cannot load Caustic Visualizer!!"
-      aList.showHelpWindow(Message="Sorry, Caustic Visualizer cannot be Loaded",DispTitle='Caustic Concierge Halt',WinTitle="Concierge Fail")
+      print "Sorry, cannot load Caustic Visualizer for Maya!!"
+      aList.showHelpWindow(Message="Sorry, Caustic Visualizer for Maya cannot be Loaded",DispTitle='Visualizer Concierge Halt',WinTitle="Concierge Fail",ToolCat='Concierge')
       return
   needed_node("CausticVisualizerBatchSettings")
   needed_node("CausticVisualizerSettings")

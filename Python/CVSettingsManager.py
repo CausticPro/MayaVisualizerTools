@@ -280,7 +280,7 @@ can make managing them awkward -- this manager helps you by
 providing shortcuts to key settings, common actions, and
 a means to quickly copy, save, and restore
 viewport rendering presets."""
-		self.showHelpWindow(Message=helpText,DispTitle='Render Settings Manager Help',WinTitle="Settings Mgr Help")
+		self.showHelpWindow(Message=helpText,DispTitle='Render Settings Manager Help',WinTitle="Settings Mgr Help",ToolCat='SettingsMgr')
 
 	def newHandler(self, *args):
 		"create new viewport preset"
@@ -294,6 +294,7 @@ viewport rendering presets."""
 			return	# do nothing
 		maya.cmds.nodePreset(save=('CausticVisualizerSettings',self.newName))
 		self.updateUI(self.newName)
+		safely_log_event('SettingsMgr','NewPreset')
 		self.statusMsg('Preset "%s" added.'%(self.newName))
 
 	def replaceHandler(self, *args): # should I have a selectcommand?
@@ -374,7 +375,7 @@ viewport rendering presets."""
 		maya.cmds.textScrollList(self.prList,edit=True,append=presetList)
 
 	def showUI(self):
-		self.startUI(DispTitle="Render Settings Manager",WinTitle="Render Settings Mgr",WinName="SetMgr")
+		self.startUI(DispTitle="Render Settings Manager",WinTitle="Render Settings Mgr",WinName="SetMgr",ToolCat="SettingsMgr")
 		#
 		prFrame = maya.cmds.frameLayout('pre',label='Caustic Visualizer Viewport Presets',parent=self.vertLyt)
 		prCol = maya.cmds.rowLayout(parent=prFrame,nc=3,ct2=['left','right'],co2=[4,4],adjustableColumn=2)

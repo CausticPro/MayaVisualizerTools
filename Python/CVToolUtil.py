@@ -18,6 +18,7 @@ import sys
 import os
 import maya.cmds
 import maya.mel
+import maya
 import re
 import unittest
 # this little trick enables us to run unittests in mayapy.exe..
@@ -35,6 +36,26 @@ def _safely_seek_appVersion():
 	except:
 		pass
 	return v
+
+def safely_log_event(Category='CVToolUtil',Action='Log',Label=None,Value=None):
+	"If the user has opted out of reporting, nothing will happen"
+	if Label is None and Value is None:
+		try:
+			maya.cmds.CausticVisualizerSendStatsEvent(Category,Action)
+		except:
+			pass
+		return
+	v=0
+	try:
+		v = int(max(v,Value))
+	except:
+		pass
+	try:
+		maya.cmds.CausticVisualizerSendStatsEvent(Category,Action,Label,v)
+	except:
+		pass
+
+# ###################################
 
 class CVTButton(object):
 	"""
@@ -139,9 +160,10 @@ class CVToolUtil(object):
 		logoFile = re.sub(r'\\','/',logoFile) # Qt likes forwward slash
 		return logoFile
 
-	def showHelpWindow(self,Message="Help text should go here.",DispTitle="Generic CV Help",WinTitle="CVToolUtil Help"):
+	def showHelpWindow(self,Message="Help text should go here.",DispTitle="Generic CV Help",WinTitle="CVToolUtil Help",ToolCat='CVTool'):
 		"bring up help window, and print to screen too"
 		print Message
+		safely_log_event(ToolCat,'Help',DispTitle)
 		if self.helpWindow:
 			if maya.cmds.window(self.helpWindow,exists=True):
 				maya.cmds.deleteUI(self.helpWindow,window=True)
@@ -225,11 +247,12 @@ class CVToolUtil(object):
 		maya.cmds.separator(p=botCol,style='none')
 		CVTButton(Parent=botCol,Label='Close',Col=[.4,.3,.3],Cmd=CVToolUtil.use.closeHandler,Anno='Close this window')
 
-	def startUI(self,DispTitle="Generic Window",WinTitle="CV Win",WinName="CVW"):
+	def startUI(self,DispTitle="Generic Window",WinTitle="CV Win",WinName="CVW",ToolCat='CVTool',ToolAction='Start'):
 		if self.window:
 			if maya.cmds.window(self.window,exists=True):
 				maya.cmds.deleteUI(self.window,window=True)
 		# ignore 'WinName'
+		safely_log_event(ToolCat,ToolAction,DispTitle)
 		self.window = maya.cmds.window(menuBar=False,sizeable=False,title=WinTitle)
 		self.vertLyt = maya.cmds.columnLayout(p=self.window,rs=6,cal='center',adj=True,cat=['both',0],co=['both',0])
 		self.visHeader(DispTitle=DispTitle)
