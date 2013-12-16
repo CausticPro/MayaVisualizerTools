@@ -229,6 +229,32 @@ class Service(CVToolUtil):
     self.cache("defaultViewColorManager.contrast",0.0,msg)
     self.problem_texture_finder()
 
+  def correct_camera_sizing(self):
+    # avoid errors caused by non-unity camera scaling
+    for cam in [x for x in maya.cmds.ls(type='camera') if not maya.cmds.getAttr('%s.orthographic'%(x))]:
+      slAttr = '%s.locatorScale'%(cam)
+      slVal = maya.cmds.getAttr(slAttr)
+      camX = maya.cmds.listRelatives(cam,p=True)[0] # parent xform node
+      rig = maya.cmds.listRelatives(camX,p=True) # if "simple" camera this will be None
+      scAttr = '%s.scale'%(camX)
+      camSc = maya.cmds.getAttr(scAttr)[0]
+      # print '%s'%(camSc)[0]
+      if not (camSc[0] == camSc[1] and camSc[1] == camSc[2]):
+        print '// Caution: camera "%s" has non-uniform scale!' % (camX)
+        continue
+      if camSc[0] == 1.0:
+        # print 'Camera "%s" looks okay' % (camX)
+        continue # this camera is fine
+      if rig is not None:
+        print '// Scaled camera "%s" appears to have a complex rig, not adjusting it' % (camX)
+        continue
+      slVal *= camSc[0]
+      msg = 'Adjusting scale of "%s" & its locator to avoid DoF errors' % (camX)
+      self.cache(scAttr+'X',1.0,msg)
+      self.cache(scAttr+'Y',1.0,msg)
+      self.cache(scAttr+'Z',1.0,msg)
+      self.cache(slAttr,slVal,msg)
+
   def calculate_needs(self):
     """
     build a list of needed changes
@@ -462,6 +488,7 @@ def Prep():
       return
   needed_node("CausticVisualizerBatchSettings")
   needed_node("CausticVisualizerSettings")
+  aList.correct_camera_sizing()
   aList.calculate_needs()
   if not aList.already_okay():
     aList.send_all()
