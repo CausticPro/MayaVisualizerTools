@@ -45,6 +45,11 @@ class CVSettingsManager(CVToolUtil):
 		"multiPassAdaptive": True,
 		"multiPassAdaptiveThresholdPct": 0.20000000298,
 		"rayDepthMinContributionPct": 0.5,
+		'motionBlur': 0,
+		'motionPassesPerSample': 1,
+		'shutterAngleOverride': 0,
+		'shutterAngle': 180.0,
+		'shutterPhase': 0.0,
 		"giMaxPrimaryRays": 2,
 		"giEnableCaustics": False,
 		"limitTextureDimensions": False,
@@ -61,6 +66,7 @@ class CVSettingsManager(CVToolUtil):
 		"maxRayDepthRefract": 4,
 		"maxRayDepthGI": 1,
 		"maxRayDepthTotal": 6,
+		'batchDifferentials': 0,
 		"giEnableDiffuse": False,
 		# "giDiffuseMultiplier": [(1.0, 1.0, 1.0)],    # note that the componenets are also attributes, so this tuple's not needed
 		"giDiffuseMultiplierR": 1.0,
@@ -75,6 +81,8 @@ class CVSettingsManager(CVToolUtil):
 		"imageFilterMitNetB": 0.33333298564,
 		"imageFilterMitNetC": 0.33333298564}
 	DefaultViewportSettings = {
+		'adaptiveDegradation': 1,
+		"targetFPS": 10,
 		"multiPassPasses": 10,
 		"multiPassSamplesPerPixelPerPass": 1,
 		"multiPassAdaptive": True,
