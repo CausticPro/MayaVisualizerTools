@@ -15,6 +15,7 @@ except:
 class SupportChecker(object):
 	# static whitelist for now
 	KNOWN_ISSUE = 'Known Issue, Uniform Results Should Look Okay'
+	UNKNOWN = 'Unknown Node Type'
 	# list of node types, and any known 'issues'
 	WhiteList = {
 		'animCurve':	None,
@@ -155,7 +156,7 @@ class SupportChecker(object):
 
 	@staticmethod
 	def hs_issue(NodeType):
-		return SupportChecker.WhiteList.get(NodeType,'Unknown Node Type')
+		return SupportChecker.WhiteList.get(NodeType,SupportChecker.UNKNOWN)
 
 	def __init__(self):
 		self.hsNodes = {}
@@ -249,8 +250,16 @@ class TestSupCheck(unittest.TestCase):
 	def test_hasIssues(self):
 		""
 		self.assertTrue(len(self.Checker.hsTypes)>0)
+	def test_checkUnknown(self):
+		""
+		self.assertEqual(SupportChecker.hs_issue('Waldo'),SupportChecker.UNKNOWN)
+	def test_checkKnown(self):
+		""
+		for t in ['brownian','mip_cameramap','renderLayer']:
+			self.assertTrue(SupportChecker.hs_issue(t) is None)
 
 if __name__ == "__main__":
+	print "Running CVSupportCheck Unit Tests"
 	unittest.main(exit=False)
 
 # ################### eof ###
