@@ -55,6 +55,11 @@ def safely_log_event(Category='CVToolUtil',Action='Log',Label=None,Value=None):
 	except:
 		pass
 
+def maya_print(msg):
+	"print, but only when running Maya -- not in mayapy testing"
+	if not 'mayapy' in sys.executable:
+		print msg
+
 # ###################################
 
 class CVTButton(object):
@@ -148,13 +153,13 @@ class CVToolUtil(object):
 		try:
 			ml = maya.cmds.pluginInfo('CausticVisualizer.mll',query=True,path=True)
 		except:
-			print "Caustic Visualizer is not installed!"
+			maya_print("Caution: Caustic Visualizer is not installed!")
 			return None
 		ml = os.path.normpath(ml)
 		ml = os.path.split(os.path.split(ml)[0])[0]
 		logoFile = os.path.join(ml,'icons',Logo)
 		if not os.path.exists(logoFile):
-		 	print 'cannot find "%s"'%(logoFile)
+		 	print 'Caution: cannot find logo file "%s"'%(logoFile)
 		 	return None
 		# print 'Found logo "%s"'%(logoFile)
 		logoFile = re.sub(r'\\','/',logoFile) # Qt likes forwward slash
@@ -209,10 +214,10 @@ class CVToolUtil(object):
 
 	def updateUI(self,SelName=None):
 		if not self.window:
-			print "cannot update when there is no window"
+			maya_print("cannot update when there is no window")
 			return
 		if not maya.cmds.window(self.window,exists=True):
-			print "cannot update if the window has been closed"
+			maya_print("cannot update if the window has been closed")
 			return
 
 	def visHeader(self,DispTitle="wha?",Parent=None):
@@ -234,7 +239,7 @@ class CVToolUtil(object):
 		if self.statusText:
 			maya.cmds.text(self.statusText,edit=True,label=Text)
 		else:
-			print Text
+			print 'Status: %s' % (Text)
 
 	def helpCloseFooter(self,Parent=None):
 		"help and close buttons -- no others, no OKAY etc"
@@ -261,7 +266,7 @@ class CVToolUtil(object):
 		if len(maya.cmds.ls(Name)) < 1:
 			n = maya.cmds.createNode(Name,name=Name,shared=True,skipSelect=True)
 			if n != Name:
-				print "Cannot create '%s' node!"%(Name)
+				print "force_cv_node(): Cannot create '%s' node!"%(Name)
 				return False
 		return True
 

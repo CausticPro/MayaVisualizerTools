@@ -84,7 +84,7 @@ class Service(CVToolUtil):
       return
     t = type(self.val[Name])
     if t is tuple:
-      print "some sort of tuple, oops"
+      print "Can't set '%s': some sort of tuple" % (Name)
       return
     try:
       maya.cmds.setAttr(Name,self.val[Name])
@@ -94,16 +94,16 @@ class Service(CVToolUtil):
   def undo(self,Name):
     "actually send this value to Maya"
     if not self.prev.has_key(Name):
-      print 'Can\'t set attr "%s" because it\'s not defined' % (Name)
+      print 'Can\'t undo attr "%s" because it\'s not defined' % (Name)
       return
     t = type(self.prev[Name])
     if t is tuple:
-      print "some sort of tuple, oops"
+      print "Can't undo '%s': some sort of tuple," % (Name)
       return
     try:
       maya.cmds.setAttr(Name,self.prev[Name])
     except:
-      print 'Error setting "%s" to %s'%(Name,self.prev[Name])
+      print 'Error undoing "%s" back to %s'%(Name,self.prev[Name])
 
   def log(self,Name):
     "don't actually send this value to Maya"
@@ -112,7 +112,7 @@ class Service(CVToolUtil):
       return
     t = type(self.val[Name])
     if t is tuple:
-      print "# %s is some sort of tuple, oops"%(Name)
+      print "log: %s is some sort of tuple"%(Name)
       return
     print 'maya.cmds.setAttr("%s",%s)'%(Name,self.val[Name])
 
@@ -136,7 +136,7 @@ class Service(CVToolUtil):
     try:
       filenodes =  maya.cmds.ls(type="file")
     except:
-      print "Err: cannot access file nodes"
+      print "Err: cannot access file nodes for texture search"
       return
     for f in maya.cmds.ls(type="file"):
       try:
@@ -145,7 +145,7 @@ class Service(CVToolUtil):
         if m:
           print ('Caution: problem %s texture\n\t"%s"\n' % (m.groups(0)[0],fn))
       except:
-        print '\tUnable to check texture format for "%f"'
+        print '\tUnable to check texture format for "%s"'%(f)
 
   def enable_shadows(self):
     "turn on raytraced shadows for all lights that might need them"
@@ -163,7 +163,7 @@ class Service(CVToolUtil):
             if maya.cmds.getAttr(reflAttr) == 0.5: # the untraced default: let's drop it to zero
               self.cache(reflAttr,DefaultReflectivity,"Reflectivity tuned for %d materials")
           except:
-            print "issue with node %s"%(M)
+            print "refletion_reduction issue with node %s"%(M)
       except:
         print "issue with material %s reflectivity"%(M)
 
@@ -176,7 +176,7 @@ class Service(CVToolUtil):
         if maya.cmds.getAttr(L+".shadowRays") == 1:
           self.cache(L+".shadowRays",8,"Area light shadow rays increased") # chosen after CO chat
       except:
-        print "issue with light %s"%(L)
+        print "issue with shape of light %s"%(L)
 
   def adjust_final_gather_rays(self):
     if not maya.cmds.getAttr("miDefaultOptions.finalGather"):
@@ -189,7 +189,7 @@ class Service(CVToolUtil):
         fgRays = min(fgRays,1)
       self.cache("miDefaultOptions.finalGatherRays",fgRays,"GI Rays adjusted") # ??????
     except:
-      print "issue with miDefaultOptions"
+      print "final_gather: issue with miDefaultOptions"
     try:
       self.cache("CausticVisualizerBatchSettings.giMaxPrimaryRays",fgRays,"GI Rays adjusted")
       self.cache("CausticVisualizerSettings.giMaxPrimaryRays",fgRays,"GI Rays adjusted")
@@ -200,7 +200,7 @@ class Service(CVToolUtil):
       if cvPasses < 24:
         self.cache("CausticVisualizerSettings.multiPassPasses",24,"Pass Count Improved")
     except:
-      print "issue with CV nodes"
+      print "final_gather: issue with CV nodes"
 
   def adaptive_sampling(self):
     "Turn on adaptive sampling UNLESS motion blur is active"
@@ -360,7 +360,12 @@ you can copy and paste these commands selectively yourself."""
 def needed_node(Name):
   n = maya.cmds.ls(Name)
   if len(n) != 1:
-    nn = maya.cmds.createNode(Name,name=Name,shared=True,skipSelect=True)
+    try:
+      nn = maya.cmds.createNode(Name,name=Name,shared=True,skipSelect=True)
+    except:
+      print "Unable to create '%s' node, sorry" % (Name)
+      return False
+      pass
     if nn != Name:
       maya.cmds.warning('Unable to correctly create node "%s" - got "%s"\n'%(Name,nn))
       return False
@@ -382,7 +387,7 @@ def cv_assign_mr_stringopt(Name,Type,Value):
       try:
         prevName = maya.cmds.getAttr(attr+".name")
       except:
-        print "issue with %s"%(attr)
+        print "mr_stringopt issue with %s"%(attr)
         break
       if prevName == "":        # we ran off the end of mental ray's existing list
         print "Adding '%s'=(%s) as stringOption[%d]" % (Name,Value,i)
@@ -420,7 +425,7 @@ def update_string_options():
     changes |= cv_assign_mr_stringopt("light relative scale","float","0.31831") # (1.0/PI)
     changes |= cv_assign_mr_stringopt("light lighting resolution","int","512")
   except:
-    print "Caution, mental ray is not loaded"
+    print "Caution, mental ray is not loaded, can't update string options"
     return False
   if len(prevSel) > 0:
     maya.cmds.select(prevSel)
@@ -452,7 +457,7 @@ def is_mental():
       if emulator == 2:  # hopefully this never chnages!!!
         return True # we are in mental emulaton mode
     except:
-      print "issue with emulation"
+      print "issue with mental emulation"
   return False
 
 def smells_mental():
@@ -483,7 +488,7 @@ def Prep():
         maya.cmds.warning('Unable to load the Visualizer plugin!\nCheck your installation.\n')
         return
     except:
-      print "Sorry, cannot load Caustic Visualizer for Maya!!"
+      CVToolUtil.maya_print("Sorry, cannot load Caustic Visualizer for Maya!!")
       aList.showHelpWindow(Message="Sorry, Caustic Visualizer for Maya cannot be Loaded",DispTitle='Visualizer Concierge Halt',WinTitle="Concierge Fail",ToolCat='Concierge')
       return
   needed_node("CausticVisualizerBatchSettings")
